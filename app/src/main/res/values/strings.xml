@@ -29,7 +29,9 @@
     <string name="NewTest">New Test</string>
     <string name="retry">Retry</string>
     <string name="GenerateReport">Generate Report</string>
+    <string name="reGenerateReport">Re Generate Report</string>
     <string name="SendReport">Submit Report</string>
+
     <string name="Result">Result</string>
 
 </resources>
