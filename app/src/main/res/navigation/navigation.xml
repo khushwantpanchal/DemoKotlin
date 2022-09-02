@@ -4,21 +4,80 @@
     xmlns:tools="http://schemas.android.com/tools" android:id="@+id/app_navigation"
     app:startDestination="@id/mainFragment">
     <fragment android:id="@+id/mainFragment"
-        android:name="com.ipath.hospitaldevice.ui.main.MainFragment"
+        android:name="com.ipath.hospitaldevice.ui.patient.PatientFragment"
         android:label="fragment_my_home"
-        tools:layout="@layout/main_fragment">
+        tools:layout="@layout/patient_details_fragment">
         <action android:id="@+id/action_mainFragment_to_patientFragment"
             app:destination="@id/patientFragment"
             app:enterAnim="@anim/anim_slide_in_right"
             app:exitAnim="@anim/anim_slide_out_left"
             app:popEnterAnim="@anim/anim_slide_in_left"
-            app:popExitAnim="@anim/anim_slide_out_right"/>
+            app:popExitAnim="@anim/anim_slide_out_right">
+        <argument
+            android:name="pname"
+            app:argType="string"
+            />
+            <argument
+                android:name="mobile"
+                app:argType="string" />
+            <argument
+                android:name="email"
+                app:argType="string" />
+        </action>
     </fragment>
     <fragment android:id="@+id/patientFragment"
-        android:name="com.ipath.hospitaldevice.ui.patientdetails.PatientFragment"
+        android:name="com.ipath.hospitaldevice.ui.searchtest.SearchFragment"
         android:label="fragment_my_second"
-        tools:layout="@layout/patient_fragment">
+        tools:layout="@layout/search_fragment">
 
+        <action android:id="@+id/action_patientFragment_to_reportFragment"
+            app:destination="@id/reportFragment"
+            app:enterAnim="@anim/anim_slide_in_right"
+            app:exitAnim="@anim/anim_slide_out_left"
+            app:popEnterAnim="@anim/anim_slide_in_left"
+            app:popExitAnim="@anim/anim_slide_out_right">
+            <argument
+                android:name="pname"
+                app:argType="string"
+                />
+            <argument
+                android:name="mobile"
+                app:argType="string" />
+            <argument
+                android:name="email"
+                app:argType="string" />
+        </action>
+
+        <action android:id="@+id/action_patientFragment"
+            app:destination="@id/patientFragment"
+            app:enterAnim="@anim/anim_slide_in_right"
+            app:exitAnim="@anim/anim_slide_out_left"
+            app:popEnterAnim="@anim/anim_slide_in_left"
+            app:popExitAnim="@anim/anim_slide_out_right">
+            <argument
+                android:name="pname"
+                app:argType="string"
+                />
+            <argument
+                android:name="mobile"
+                app:argType="string" />
+            <argument
+                android:name="email"
+                app:argType="string" />
+        </action>
+    </fragment>
+    <fragment android:id="@+id/reportFragment"
+        android:name="com.ipath.hospitaldevice.ui.patientreport.ReportFragment"
+        android:label="fragment_my_second"
+        tools:layout="@layout/search_fragment">
+        <action android:id="@+id/action_reportFragment_to_mainFragment"
+            app:destination="@id/mainFragment"
+            app:enterAnim="@anim/anim_slide_in_right"
+            app:exitAnim="@anim/anim_slide_out_left"
+            app:popEnterAnim="@anim/anim_slide_in_left"
+            app:popExitAnim="@anim/anim_slide_out_right">
+
+        </action>
     </fragment>
 
 

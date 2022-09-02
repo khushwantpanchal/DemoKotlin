@@ -477,4 +477,8 @@
     <dimen name="_123msp">@dimen/_86ssp</dimen>
     <dimen name="_124msp">@dimen/_87ssp</dimen>
     <dimen name="_125msp">@dimen/_88ssp</dimen>
+    <dimen name="newsMoreTextSize">12sp</dimen>
+    <dimen name="form_app_bar_height">250dp</dimen>
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
 </resources>

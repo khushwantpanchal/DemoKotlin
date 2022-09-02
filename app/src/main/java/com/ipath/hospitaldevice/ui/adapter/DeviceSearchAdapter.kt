@@ -1,3 +1,8 @@
+package com.ipath.hospitaldevice.ui.adapter
+
+import android.annotation.SuppressLint
+import android.bluetooth.le.ScanRecord
+import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -7,49 +12,55 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.ipath.hospitaldevice.R
 
-class DeviceSearchAdapter : RecyclerView.Adapter<DeviceSearchAdapter.ViewHolder>() {
-
-    private val mContext: Context? = null
-    private val mSearchDeviceList: ArrayList<String>? = null
-
+class DeviceSearchAdapter(
+    private val mContext: Context,
+    private var mSearchDeviceList:  MutableList<ScanResult>
+) :
+    RecyclerView.Adapter<DeviceSearchAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val v = LayoutInflater.from(parent.context).inflate(R.layout.item_device_search, parent, false)
-        return ViewHolder(v)
+        val view: View = LayoutInflater.from(mContext).inflate(
+            R.layout.item_device_search, parent,
+            false
+        )
+        return ViewHolder(view)
     }
-    override fun onBindViewHolder(holder: ViewHolder, position41: Int) {
 
-        holder.tvDeviceSearch.setText(mSearchDeviceList!!.get(position41));
-        holder.llDeviceSearch.setOnClickListener {
-
-                    mOnItemClickListener!!.onItemClick(position41);
-
+    @SuppressLint("MissingPermission")
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.tvDeviceSearch.text = mSearchDeviceList[holder.adapterPosition].device.name.toString()
+        holder.llDeviceSearch.tag =  holder.adapterPosition
+        holder.llDeviceSearch.setOnClickListener { v ->
+            val position = v.tag as Int
+            mOnItemClickListener!!.onItemClick(position)
         }
     }
 
-
-
-    //the class is hodling the list view
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-            var   llDeviceSearch = itemView.findViewById<LinearLayout>(R.id.ll_device_search);
-            var tvDeviceSearch = itemView.findViewById<TextView>(R.id.tv_device_search);
-
-    }
-
-
-    fun setOnItemClick(onItemClickListener:OnItemClickListener) {
-        this.mOnItemClickListener = onItemClickListener;
-    }
-
-     var mOnItemClickListener:OnItemClickListener?=null;
-
-    interface OnItemClickListener{
-      fun onItemClick(position:Int);
-    }
-
     override fun getItemCount(): Int {
-        return mSearchDeviceList!!.size
+        return mSearchDeviceList.size
     }
 
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val llDeviceSearch: LinearLayout
+         val tvDeviceSearch: TextView
+
+        init {
+            llDeviceSearch = itemView.findViewById(R.id.ll_device_search)
+            tvDeviceSearch = itemView.findViewById(R.id.tv_device_search)
+        }
+    }
+
+    fun setOnItemClick(onItemClickListener: OnItemClickListener?) {
+        mOnItemClickListener = onItemClickListener
+    }
+
+    private var mOnItemClickListener: OnItemClickListener? = null
+
+    interface OnItemClickListener {
+        fun onItemClick(position: Int)
+    }
+    fun setData(scans: MutableList<ScanResult>) {
+        mSearchDeviceList = scans
+        notifyDataSetChanged()
+    }
 }

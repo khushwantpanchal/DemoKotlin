@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <variable
+            name="sfragment"
+            type="com.ipath.hospitaldevice.ui.searchtest.SearchVM" />
+    </data>
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    android:layout_width="match_parent"
+    android:padding="@dimen/_10mdp"
+    android:layout_height="match_parent"
+    tools:context=".ui.searchtest.SearchFragment">
+
+    <!-- TODO: Update blank fragment layout -->
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/personalDetailsCard"
+        style="@style/centreLocatorCardDesign"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="@dimen/_15mdp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="10dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:focusableInTouchMode="false"
+            android:orientation="vertical"
+            android:padding="20dp">
+            <TextView
+                android:id="@+id/lblName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/patientname"
+
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/pName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/_10mdp"
+                android:text="@string/patientname"
+                app:layout_constraintStart_toEndOf="@+id/lblName"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
+            <Spinner
+                android:id="@+id/deviceList"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_32sdp"
+                android:autofillHints="@string/select_device"
+                android:padding="@dimen/_2sdp"
+                android:layout_marginTop="@dimen/_20sdp"
+                android:layout_marginVertical="@dimen/_10mdp"
+                android:background="@color/brown"
+                app:layout_constraintTop_toBottomOf="@+id/lblName"
+                android:outlineProvider="background"
+                android:prompt="@string/select_device"
+                app:layout_constraintStart_toStartOf="parent"
+                 />
+
+
+
+
+
+
+            <Button
+                android:id="@+id/btnSend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right"
+                android:layout_marginVertical="@dimen/_10sdp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/deviceList"
+                android:layout_marginTop="@dimen/_10mdp"
+
+                android:background="@drawable/centre_button"
+                android:text="@string/searchdevice"
+                android:textColor="@color/white" />
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:gravity="center"
+                android:padding="10dp"
+                android:text="Result Data :"
+                android:textSize="18sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/btnSend" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:padding="10dp"
+                android:textSize="18sp"
+                android:text="____"
+                android:gravity="center"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@+id/tvTitle"
+                />
+
+
+
+            <TextView
+                android:id="@+id/tvParams"
+                android:padding="10dp"
+                android:gravity="center"
+                android:textSize="24sp"
+                android:textColor="@android:color/black"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@+id/tvTitle"
+                />
+
+            <com.ipath.hospitaldevice.ble.view.WaveformView
+
+                android:id="@+id/wfvPleth"
+                android:layout_width="match_parent"
+                android:layout_margin="8dp"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@+id/scrollable"
+                android:layout_height="200dp"/>
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:id="@+id/scrollable"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tvParams">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Bluetooth device" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp" />
+                    <Button
+                        android:id="@+id/btnRetry"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="right"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/deviceList"
+                        android:layout_marginTop="@dimen/_10mdp"
+
+                        android:background="@drawable/centre_button"
+                        android:text="@string/retry"
+                        android:textColor="@color/white" />
+                    <Button
+                        android:id="@+id/btnReport"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="right"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/deviceList"
+                        android:layout_marginTop="@dimen/_10mdp"
+
+                        android:background="@drawable/centre_button"
+                        android:text="@string/GenerateReport"
+                        android:textColor="@color/white" />
+
+
+
+
+                </LinearLayout>
+
+            </ScrollView>
+            <!--                android:onClick="@{()->patientVM.navigator.onClicked()}"-->
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

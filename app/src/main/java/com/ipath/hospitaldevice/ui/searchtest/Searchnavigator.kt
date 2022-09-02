@@ -1,4 +1,4 @@
-package com.ipath.hospitaldevice.ui.patientdetails
+package com.ipath.hospitaldevice.ui.searchtest
 
 interface PatientNavigator {
 

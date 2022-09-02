@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <data>
+        <variable
+            name="patientVM"
+            type="com.ipath.hospitaldevice.ui.patient.PatientVM" />
+    </data>
+    <androidx.core.widget.NestedScrollView
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/scrollFeed"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageBanner"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:context="com.appsnipp.formdesigns.MainActivity"
+        android:background="@drawable/centre_background"
+        android:focusableInTouchMode="true">
+
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:background="@drawable/centre_background"
+    android:layout_height="wrap_content"
+    android:paddingBottom="@dimen/_10mdp"
+    tools:context=".ui.patient.PatientFragment">
+    <RelativeLayout
+        android:id="@+id/imageBanner"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_256mdp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:gravity="top"
+        >
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginTop="10dp"
+
+            android:adjustViewBounds="true"
+            android:cropToPadding="true"
+            android:src="@drawable/techimagenew2" />
+
+    </RelativeLayout>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/personalDetailsCard"
+            style="@style/centreLocatorCardDesign"
+            app:layout_constraintTop_toBottomOf="@+id/imageBanner"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_margin="@dimen/_15mdp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="10dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:focusableInTouchMode="false"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/txtInputName"
+                    android:layout_width="match_parent"
+                    style="@style/modifiedEditTextLayout"
+                     android:background="@color/brown"
+                    android:backgroundTint="@color/brown"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/txtName"
+                        style="@style/modifiedEditText"
+                        android:hint="@string/name"
+                        android:backgroundTint="@color/brown"
+                        app:boxBackgroundColor="@color/brown"
+                        android:background="@android:color/transparent"
+                        android:singleLine="true" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/txtInputEmail"
+                    android:layout_width="match_parent"
+                    style="@style/modifiedEditTextLayout"
+                    android:background="@color/brown"
+                    android:backgroundTint="@color/brown"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/txtEmail"
+                        style="@style/modifiedEditText"
+                        android:ems="10"
+                        android:hint="@string/email"
+                        android:backgroundTint="@color/brown"
+                        app:boxBackgroundColor="@color/brown"
+                        android:background="@android:color/transparent"
+
+                        android:inputType="textEmailAddress" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/txtInputMob"
+                    android:layout_width="match_parent"
+                    style="@style/modifiedEditTextLayout"
+                    android:background="@color/brown"
+                    android:backgroundTint="@color/brown"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/txtMob"
+                        style="@style/modifiedEditTextNumber"
+                        android:hint="@string/mobno"
+                        android:maxLength="10"
+                        android:backgroundTint="@color/brown"
+                        app:boxBackgroundColor="@color/brown"
+                        android:background="@android:color/transparent"
+
+                        android:inputType="phone" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/txtInputAge"
+                    android:layout_width="match_parent"
+                    style="@style/modifiedEditTextLayout"
+                    android:background="@color/brown"
+                    android:visibility="gone"
+                    android:backgroundTint="@color/brown"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/txtAge"
+                        style="@style/modifiedEditTextNumber"
+                        android:backgroundTint="@color/brown"
+                        app:boxBackgroundColor="@color/brown"
+                        android:background="@android:color/transparent"
+                        android:maxLength="3"
+                        android:hint="@string/age" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/txtInputAddress"
+                    android:layout_width="match_parent"
+                    style="@style/modifiedEditTextLayout"
+                    android:background="@color/brown"
+                    android:visibility="gone"
+                    android:backgroundTint="@color/brown"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/txtAddress"
+                        style="@style/modifiedEditText"
+                        android:hint="@string/message"
+                        android:backgroundTint="@color/brown"
+                        app:boxBackgroundColor="@color/brown"
+                        android:background="@android:color/transparent"
+                        android:inputType="textMultiLine"
+                        android:minLines="2" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <Button
+                    android:id="@+id/btnSend"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="right"
+                    android:layout_marginTop="@dimen/_10mdp"
+                    android:onClick="@{()->patientVM.navigator.onClicked()}"
+                    android:background="@drawable/centre_button"
+                    android:text="@string/send"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</layout>

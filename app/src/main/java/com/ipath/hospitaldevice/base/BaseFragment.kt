@@ -1,14 +1,20 @@
-
 package com.ipath.hospitaldevice.base
 
+import android.opengl.Visibility
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AutoCompleteTextView
+import android.widget.ImageView
 import androidx.annotation.LayoutRes
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
+import com.ipath.hospitaldevice.R
+import com.ipath.hospitaldevice.ui.patient.PatientFragmentDirections
 
 abstract class BaseFragment<T : ViewDataBinding, V : BaseViewModel<*>> : Fragment(),
     FragmentListener {
@@ -36,6 +42,21 @@ abstract class BaseFragment<T : ViewDataBinding, V : BaseViewModel<*>> : Fragmen
 
     abstract fun setupUI()
     abstract fun setupObserver()
+    fun setupTitle(title: String) {
+        Log.e("mylog", "onCreate: 2", )
+        (activity as BaseActivity).mBinding?.txtTitleHome?.text=title
+    }
+
+    fun setupBackButtonEnable(isEnable: Boolean) {
+        if (isEnable) {
+            (activity as BaseActivity).mBinding?.imgBack?.visibility=View.VISIBLE
+            (activity as BaseActivity).mBinding?.imgBack?.setOnClickListener {
+                findNavController().popBackStack()
+            }
+        }else{
+            (activity as BaseActivity).findViewById<ImageView>(R.id.imgBack).visibility=View.GONE
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

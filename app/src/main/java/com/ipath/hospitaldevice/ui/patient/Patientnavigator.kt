@@ -1,4 +1,4 @@
-package com.ipath.hospitaldevice.ui.main
+package com.ipath.hospitaldevice.ui.patient
 
 interface MainNavigator {
 
