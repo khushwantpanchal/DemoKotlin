@@ -39,7 +39,7 @@ class BluetoothLeService : Service() {
     private var mBluetoothDeviceAddress: String? = null
     private var mBluetoothGatt: BluetoothGatt? = null
     private var mConnectionState = STATE_DISCONNECTED
-    private val buf = ByteArray(10)
+    private val buf = ByteArray(17)
     private var bufIndex = 0
 
     //public final static UUID UUID_HEART_RATE_MEASUREMENT =
@@ -275,6 +275,8 @@ class BluetoothLeService : Service() {
             Log.w(TAG, "BluetoothAdapter not initialized")
             return
         }
+
+
         mBluetoothGatt!!.setCharacteristicNotification(characteristic, enabled)
 
         // This is specific to Oximeter Data Transfer.
@@ -286,11 +288,24 @@ class BluetoothLeService : Service() {
             characteristic.addDescriptor(descriptor)
             characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
             mBluetoothGatt!!.writeDescriptor(descriptor)
-            mBluetoothGatt!!.writeDescriptor(descriptor)
-            mBluetoothGatt!!.setCharacteristicNotification(characteristic, true)
+
+        }
+
+    }
+    fun writeCmd(value: ByteArray,characteristic: BluetoothGattCharacteristic) {
+        if (characteristic != null) {
+            characteristic!!.value = value
+            writeBLECharacteristic(characteristic)
         }
     }
-
+    @SuppressLint("MissingPermission")
+    private fun writeBLECharacteristic(characteristic: BluetoothGattCharacteristic?) {
+        if (null != characteristic) {
+            if (mBluetoothGatt != null) {
+                mBluetoothGatt!!.writeCharacteristic(characteristic)
+            }
+        }
+    }
     /**
      * Retrieves a list of supported GATT services on the connected device. This should be
      * invoked only after `BluetoothGatt#discoverServices()` completes successfully.

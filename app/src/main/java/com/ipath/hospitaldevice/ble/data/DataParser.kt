@@ -3,6 +3,8 @@ package com.ipath.hospitaldevice.ble.data
 import android.util.Log
 import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
+import kotlin.experimental.and
+import kotlin.experimental.or
 
 /**
  * Created by ZXX on 2016/1/8.
@@ -13,7 +15,7 @@ class DataParser     //Constructor
     var TAG = this.javaClass.simpleName
 
     //Buffer queue
-    private val bufferQueue = LinkedBlockingQueue<Int>(256)
+    private val bufferQueue = LinkedBlockingQueue<Int>()
 
     //Parse Runnable
     private var mParseRunnable: ParseRunnable? = null
@@ -46,7 +48,7 @@ class DataParser     //Constructor
         override fun run() {
             while (isStop) {
                 dat = data
-                packageData = IntArray(10)
+                packageData = IntArray(17)
                 if (dat and 0x76 > 0) //search package head
                 {
                     packageData[0] = dat
@@ -58,8 +60,8 @@ class DataParser     //Constructor
                             continue
                         }
                     }
-                    val spo2 = packageData[4]
-                    val pulseRate = packageData[3] or (packageData[2] and 0x40 shl 1)
+                    val spo2 = packageData[8]
+                    val pulseRate = packageData[7] or (packageData[7] and 0x40 shl 1)
                     val pi = packageData[0] and 0x0f
                     if (spo2 <= 100 && pulseRate <= 220) {
                        if (spo2 != mOxiParams.spo2 || pulseRate != mOxiParams.pulseRate || pi != mOxiParams.pi) {
@@ -78,6 +80,15 @@ class DataParser     //Constructor
      * @param dat
      */
     fun add(dat: ByteArray) {
+        val spo2 = dat[8].toInt()
+        val pulseRate = dat[7].toInt()
+        val pi = dat[9].toInt()
+        if (spo2 >= 0 && spo2 <= 100 && pulseRate <= 220 && pulseRate >= 0) {
+
+                mOxiParams.update(spo2, pulseRate, pi)
+                mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
+        }
+//        mPackageReceivedListener.onPlethWaveReceived(packageData[1])
         for (b in dat) {
             try {
                 bufferQueue.put(toUnsignedInt(b))
