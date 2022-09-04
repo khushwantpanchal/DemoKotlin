@@ -3,8 +3,6 @@ package com.ipath.hospitaldevice.ble.data
 import android.util.Log
 import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
-import kotlin.experimental.and
-import kotlin.experimental.or
 
 /**
  * Created by ZXX on 2016/1/8.
@@ -15,7 +13,7 @@ class DataParser     //Constructor
     var TAG = this.javaClass.simpleName
 
     //Buffer queue
-    private val bufferQueue = LinkedBlockingQueue<Int>()
+    private var bufferQueue = ByteArray(10)
 
     //Parse Runnable
     private var mParseRunnable: ParseRunnable? = null
@@ -43,33 +41,19 @@ class DataParser     //Constructor
      * ParseRunnable
      */
     internal inner class ParseRunnable : Runnable {
-        var dat = 0
+        var dat = bufferQueue
         lateinit var packageData: IntArray
         override fun run() {
             while (isStop) {
                 dat = data
-                packageData = IntArray(17)
-                if (dat and 0x76 > 0) //search package head
-                {
-                    packageData[0] = dat
-                    for (i in 1 until packageData.size) {
-                        dat = data
-                        if (dat and 0x80 == 0) {
-                            packageData[i] = dat
-                        } else {
-                            continue
-                        }
-                    }
-                    val spo2 = packageData[8]
-                    val pulseRate = packageData[7] or (packageData[7] and 0x40 shl 1)
-                    val pi = packageData[0] and 0x0f
-                    if (spo2 <= 100 && pulseRate <= 220) {
-                       if (spo2 != mOxiParams.spo2 || pulseRate != mOxiParams.pulseRate || pi != mOxiParams.pi) {
-                           mOxiParams.update(spo2, pulseRate, pi)
-                           mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
-                       }
-                    }
-                    mPackageReceivedListener.onPlethWaveReceived(packageData[1])
+                packageData = IntArray(10)
+
+                val spo2 = dat[7]
+                val pulseRate =  dat[6]
+                val pi =dat[8]/10
+                if (spo2>=35 && spo2 <= 100 && pulseRate <= 220) {
+                    mOxiParams.update(spo2.toInt(), pulseRate.toInt(), pi)
+                    mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                 }
             }
         }
@@ -80,22 +64,12 @@ class DataParser     //Constructor
      * @param dat
      */
     fun add(dat: ByteArray) {
-        val spo2 = dat[8].toInt()
-        val pulseRate = dat[7].toInt()
-        val pi = dat[9].toInt()
-        if (spo2 >= 0 && spo2 <= 100 && pulseRate <= 220 && pulseRate >= 0) {
-
-                mOxiParams.update(spo2, pulseRate, pi)
-                mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
-        }
-//        mPackageReceivedListener.onPlethWaveReceived(packageData[1])
-        for (b in dat) {
             try {
-                bufferQueue.put(toUnsignedInt(b))
+                bufferQueue=dat
             } catch (e: InterruptedException) {
                 e.printStackTrace()
             }
-        }
+
         Log.e(TAG, "add: " + Arrays.toString(dat))
 
         //Log.i(TAG, "add: "+ bufferQueue.size());
@@ -105,15 +79,12 @@ class DataParser     //Constructor
      * Get Dat from Queue
      * @return
      */
-    private val data: Int
+    private val data: ByteArray
         private get() {
-            var dat = 0
-            try {
-                dat = bufferQueue.take()
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-            return dat
+
+                return bufferQueue
+
+
         }
 
     private fun toUnsignedInt(x: Byte): Int {
@@ -138,7 +109,7 @@ class DataParser     //Constructor
                 = 0
             private set
 
-         fun update(spo2: Int, pulseRate: Int, pi: Int) {
+        fun update(spo2: Int, pulseRate: Int, pi: Int) {
             this.spo2 = spo2
             this.pulseRate = pulseRate
             this.pi = pi

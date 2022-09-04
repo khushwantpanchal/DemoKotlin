@@ -86,9 +86,9 @@ dependencies {
 
     implementation 'io.github.ParkSangGwon:tedpermission-normal:3.3.0'
 //    implementation 'no.nordicsemi.android:ble-ktx:2.5.1'
-    implementation "com.android.support:multidex:1.0.3"
-    implementation "com.github.weliem:blessed-android-coroutines:0.3.2"
+    implementation "com.github.weliem:blessed-android-coroutines:0.3.1"
     implementation 'com.jakewharton.timber:timber:5.0.1'
     implementation 'com.jakewharton:butterknife:10.2.3'
     kapt 'com.jakewharton:butterknife-compiler:10.2.3'
+    implementation 'com.github.Ficat:EasyBle:v2.0.2'
 }

@@ -113,6 +113,7 @@ class BluetoothLeService : Service() {
         // http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
         if (Const.UUID_CHARACTER_RECEIVE.equals(characteristic.uuid)) {
             val data = characteristic.value
+            Log.e("DemoTag", String(data!!))
             for (b in data) {
                 buf[bufIndex] = b
                 bufIndex++
