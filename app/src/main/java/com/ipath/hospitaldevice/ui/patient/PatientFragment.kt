@@ -39,7 +39,7 @@ class PatientFragment : BaseFragment<PatientDetailsFragmentBinding, PatientVM>()
 //        sdk = ContecSdk(context)
 //        sdk!!.init(false)
         setupTitle(getString(R.string.patient_details))
-        setupBackButtonEnable(false)
+        setupBackButtonEnable(false,false)
     }
 
     override fun setupObserver() {
@@ -84,7 +84,7 @@ class PatientFragment : BaseFragment<PatientDetailsFragmentBinding, PatientVM>()
             viewDataBinding?.txtMob?.error = "Please Enter Phone Number."
         }
 
-        return true;
+        return isvalid;
     }
 
 

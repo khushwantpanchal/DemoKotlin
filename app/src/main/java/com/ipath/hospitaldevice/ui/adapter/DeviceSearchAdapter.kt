@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.ipath.hospitaldevice.R
 
@@ -41,7 +42,7 @@ class DeviceSearchAdapter(
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val llDeviceSearch: LinearLayout
+        val llDeviceSearch: CardView
          val tvDeviceSearch: TextView
 
         init {

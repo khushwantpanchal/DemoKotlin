@@ -47,11 +47,21 @@ abstract class BaseFragment<T : ViewDataBinding, V : BaseViewModel<*>> : Fragmen
         (activity as BaseActivity).mBinding?.txtTitleHome?.text=title
     }
 
-    fun setupBackButtonEnable(isEnable: Boolean) {
-        if (isEnable) {
+    fun setupBackButtonEnable(isEnable: Boolean,islastscreen: Boolean) {
+
+        if (islastscreen) {
             (activity as BaseActivity).mBinding?.imgBack?.visibility=View.VISIBLE
             (activity as BaseActivity).mBinding?.imgBack?.setOnClickListener {
-                findNavController().popBackStack()
+                Log.e("mylog", "click back", )
+                this.findNavController().navigate(R.id.mainFragment)
+
+            }
+        }else if (isEnable) {
+            (activity as BaseActivity).mBinding?.imgBack?.visibility=View.VISIBLE
+            (activity as BaseActivity).mBinding?.imgBack?.setOnClickListener {
+                Log.e("mylog", "click back", )
+                this.findNavController().popBackStack()
+
             }
         }else{
             (activity as BaseActivity).findViewById<ImageView>(R.id.imgBack).visibility=View.GONE

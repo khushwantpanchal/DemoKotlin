@@ -18,15 +18,15 @@
     <string-array name="devicelist">
         <item >Select Report</item>
         <item >Oximeter</item>
-        <item>Glucometer</item>
-        <item >Thermometer</item>
-        <item >ECG</item>
-        <item >Blood Pressure</item>
-        <item >Medicine Pill Box</item>
+<!--        <item>Glucometer</item>-->
+<!--        <item >Thermometer</item>-->
+<!--        <item >ECG</item>-->
+<!--        <item >Blood Pressure</item>-->
+<!--        <item >Medicine Pill Box</item>-->
     </string-array>
     <string name="rationale_title">Permission required</string>
-    <string name="rationale_message">we need permission for find your <b>Location</b>, <b>Camera</b>, <b>Write storage</b>, <b>Read storage</b>, <b>Contacts</b> and <b>Call Phone</b> </string>
-    <string name="NewTest">New Test</string>
+    <string name="rationale_message">we need permission for find your <b>Bluetooth</b> </string>
+    <string name="NewTest">New Patient Test</string>
     <string name="retry">Retry</string>
     <string name="GenerateReport">Generate Report</string>
     <string name="reGenerateReport">Re Generate Report</string>

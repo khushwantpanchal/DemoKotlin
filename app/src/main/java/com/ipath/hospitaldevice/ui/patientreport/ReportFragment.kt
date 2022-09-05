@@ -50,6 +50,7 @@ import kotlinx.coroutines.*
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.coroutines.CoroutineContext
+import kotlin.system.exitProcess
 
 
 class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNavigator,
@@ -99,7 +100,7 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
 
     override fun setupUI() {
         setupTitle(getString(R.string.searchdetails))
-        setupBackButtonEnable(true)
+        setupBackButtonEnable(true,false)
         val arg = arguments?.getString("pname")
         val email = arguments?.getString("email")
         val mobile = arguments?.getString("mobile")
@@ -115,6 +116,14 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
         )
         viewDataBinding?.btnNewTest?.setOnClickListener {
             findNavController().navigate(ReportFragmentDirections.actionReportFragmentToMainFragment())
+        }
+        viewDataBinding?.btnReg?.setOnClickListener {
+            findNavController().popBackStack()
+        }
+
+        viewDataBinding?.btnExit?.setOnClickListener {
+            activity?.finish();
+            exitProcess(0);
         }
 
         viewDataBinding?.btnSendReport?.setOnClickListener {

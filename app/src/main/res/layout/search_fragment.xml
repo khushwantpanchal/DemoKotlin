@@ -86,43 +86,7 @@
                 android:background="@drawable/centre_button"
                 android:text="@string/searchdevice"
                 android:textColor="@color/white" />
-            <TextView
-                android:id="@+id/tvTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginEnd="20dp"
-                android:gravity="center"
-                android:padding="10dp"
-                android:text="Result Data :"
-                android:textSize="18sp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/btnSend" />
 
-            <TextView
-                android:id="@+id/tvStatus"
-                android:padding="10dp"
-                android:textSize="18sp"
-                android:text="____"
-                android:gravity="center"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@+id/tvTitle"
-                />
-
-
-
-            <TextView
-                android:id="@+id/tvParams"
-                android:padding="10dp"
-                android:gravity="center"
-                android:textSize="24sp"
-                android:textColor="@android:color/black"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@+id/tvTitle"
-                />
 
             <com.ipath.hospitaldevice.ble.view.WaveformView
 
@@ -140,7 +104,7 @@
                 android:id="@+id/scrollable"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/tvParams">
+                app:layout_constraintTop_toBottomOf="@+id/btnSend">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -157,19 +121,56 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp" />
+                    <TextView
+                        android:id="@+id/tvParams"
+                        android:padding="10dp"
+                        android:gravity="center"
+                        android:textSize="24sp"
+                        android:textColor="@color/black"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintTop_toBottomOf="@+id/tvTitle"
+                        />
+                    <TextView
+                        android:id="@+id/tvTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="20dp"
+                        android:layout_marginEnd="20dp"
+                        android:gravity="center"
+                        android:padding="10dp"
+                        android:text="Result Data :"
+                        android:textSize="18sp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/btnSend" />
+
+                    <TextView
+                        android:id="@+id/tvStatus"
+                        android:padding="10dp"
+                        android:textSize="18sp"
+                        android:text="____"
+                        android:gravity="center"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintTop_toBottomOf="@+id/tvTitle"
+                        />
+
+
                     <Button
                         android:id="@+id/btnRetry"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_gravity="right"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/deviceList"
                         android:layout_marginTop="@dimen/_10mdp"
-
                         android:background="@drawable/centre_button"
-                        android:text="@string/retry"
-                        android:textColor="@color/white" />
+                        android:text="@string/reGenerateReport"
+                        android:textColor="@color/white"
+android:visibility="gone"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/deviceList" />
+
                     <Button
                         android:id="@+id/btnReport"
                         android:layout_width="match_parent"
@@ -179,7 +180,7 @@
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toBottomOf="@+id/deviceList"
                         android:layout_marginTop="@dimen/_10mdp"
-
+                        android:visibility="gone"
                         android:background="@drawable/centre_button"
                         android:text="@string/GenerateReport"
                         android:textColor="@color/white" />

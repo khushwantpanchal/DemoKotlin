@@ -131,6 +131,8 @@
                         android:layout_marginTop="@dimen/_10mdp"
                         android:background="@drawable/centre_button"
                         android:text="@string/SendReport"
+                        android:enabled="false"
+                        android:backgroundTint="@color/brown"
                         android:textColor="@color/white"
                         app:layout_constraintEnd_toStartOf="@+id/btnNewTest"
                         app:layout_constraintStart_toStartOf="parent"

@@ -151,37 +151,8 @@ class BaseActivity : AppCompatActivity() {
                 //              Toast.makeText(DashBoard.this, "Permission Denied\n" + deniedPermissions.toString(), Toast.LENGTH_SHORT).show();
             }
         }
-        if (!hasPermission(Manifest.permission.BLUETOOTH) || !hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
-            TedPermission.create()
-                .setPermissionListener(permissionlistener)
-                .setRationaleTitle(R.string.rationale_title)
-                .setRationaleMessage(R.string.rationale_message)
-                .setDeniedTitle("Need Permission")
-                .setDeniedMessage("This app needs permission to use app features. \n\nPlease turn on permissions at [Setting] > [Permission]")
-                .setGotoSettingButtonText("Settings")
-                .setPermissions(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                )
-                .check()
-        }
 
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-            != PackageManager.PERMISSION_GRANTED
-        ) { //未开启定位权限
-            //开启定位权限
-            ActivityCompat.requestPermissions(
-                this, arrayOf(
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ), REQUEST_LOCATION
-            )
-        } else {
+
             //申请蓝牙权限
             if (mBluetoothAdapter == null) {
                 Toast.makeText(
@@ -194,11 +165,25 @@ class BaseActivity : AppCompatActivity() {
                 val enableBtIntent = Intent(
                     BluetoothAdapter.ACTION_REQUEST_ENABLE
                 )
+                if (ActivityCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return
+                }
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
             } else {
                 permissionOk = true
             }
-        }
+
     }
 
     private fun hasPermission(permissionType: String): Boolean {
