@@ -142,14 +142,14 @@ class BleController private constructor(stateListener: StateListener) {
         var mDataService: BluetoothGattService? = null
         if (services == null) return
         for (service in services) {
-            if (service.uuid == Const.UUID_SERVICE_DATA) {
+            if (service.uuid == Const.UUID_SERVICE_DATA_Oximeter) {
                 mDataService = service
             }
         }
         if (mDataService != null) {
             val characteristics = mDataService.characteristics
             for (ch in characteristics) {
-                if (ch.uuid == Const.UUID_CHARACTER_RECEIVE) {
+                if (ch.uuid == Const.UUID_CHARACTER_RECEIVE_Oximeter) {
                     chReceiveData = ch
                 } else if (ch.uuid == Const.UUID_MODIFY_BT_NAME) {
                     chModifyName = ch

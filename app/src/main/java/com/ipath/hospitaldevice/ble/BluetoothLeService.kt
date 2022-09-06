@@ -111,7 +111,7 @@ class BluetoothLeService : Service() {
         // This is special handling for the Heart Rate Measurement profile.  Data parsing is
         // carried out as per profile specifications:
         // http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
-        if (Const.UUID_CHARACTER_RECEIVE.equals(characteristic.uuid)) {
+        if (Const.UUID_CHARACTER_RECEIVE_Oximeter.equals(characteristic.uuid)) {
             val data = characteristic.value
             Log.e("DemoTag", String(data!!))
             for (b in data) {
@@ -281,7 +281,7 @@ class BluetoothLeService : Service() {
         mBluetoothGatt!!.setCharacteristicNotification(characteristic, enabled)
 
         // This is specific to Oximeter Data Transfer.
-        if (Const.UUID_CHARACTER_RECEIVE.equals(characteristic.uuid)) {
+        if (Const.UUID_CHARACTER_RECEIVE_Oximeter.equals(characteristic.uuid)) {
             val descriptor = characteristic.getDescriptor(Const.UUID_CLIENT_CHARACTER_CONFIG)
             if (enabled) descriptor.value =
                 BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else descriptor.value =

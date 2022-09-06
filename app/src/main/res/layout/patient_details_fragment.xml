@@ -84,6 +84,7 @@
                         android:id="@+id/txtName"
                         style="@style/modifiedEditText"
                         android:hint="@string/name"
+                        android:text="Demo NAme"
                         android:backgroundTint="@color/brown"
                         app:boxBackgroundColor="@color/brown"
                         android:background="@android:color/transparent"
@@ -105,6 +106,7 @@
                         style="@style/modifiedEditText"
                         android:ems="10"
                         android:hint="@string/email"
+                        android:text="Demo@email.com"
                         android:backgroundTint="@color/brown"
                         app:boxBackgroundColor="@color/brown"
                         android:background="@android:color/transparent"
@@ -130,7 +132,7 @@
                         android:backgroundTint="@color/brown"
                         app:boxBackgroundColor="@color/brown"
                         android:background="@android:color/transparent"
-
+                        android:text="8239267036"
                         android:inputType="phone" />
                 </com.google.android.material.textfield.TextInputLayout>
 

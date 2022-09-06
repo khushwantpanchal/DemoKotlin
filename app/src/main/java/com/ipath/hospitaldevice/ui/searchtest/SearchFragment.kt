@@ -15,21 +15,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.LocationManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.os.ParcelUuid
-import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
-import androidx.activity.result.ActivityResult
+
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.util.Predicate
 import androidx.databinding.library.baseAdapters.BR
@@ -44,7 +39,7 @@ import com.ficat.easyble.BleManager
 import com.ficat.easyble.gatt.callback.BleCallback
 import com.ficat.easyble.gatt.callback.BleConnectCallback
 import com.ficat.easyble.gatt.callback.BleNotifyCallback
-import com.ficat.easyble.gatt.callback.BleWriteCallback
+
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.normal.TedPermission
 import com.ipath.hospitaldevice.R
@@ -79,35 +74,11 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     private var mSearchDialog: SearchDevicesDialog? = null
     private var mBtDevicesAdapter: DeviceListAdapter? = null
     private val mBtDevices = java.util.ArrayList<BluetoothDevice>()
-    private var locationIntent: Intent? = null
 
-    private val isLocationPermissionGranted
-        get() = hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
 
-    private val isBluetoothPermissionGranted
-        get() = hasPermission(Manifest.permission.BLUETOOTH)
-
-    private val isBluetoothOn
-        get() = bluetoothAdapter.isBluetoothEnabled()
-
-    private val isLocationOn
-        get() = isLocationEnabled()
     lateinit var activityResultLauncher: ActivityResultLauncher<String>;
     lateinit var requestMultiplePermissions: ActivityResultLauncher<Array<String>>;
     private var isScanning = false
-        set(value) {
-            field = value
-//            context.runOnUiThread {
-//                binding.bleScanner.text = if (value) resources.getString(R.string.stop_scan) else resources.getString(R.string.start_scan) }
-        }
-
-    private val startForResult =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                val intent = result.data
-                Log.d("TAG", "Intent: $intent")
-            }
-        }
 
     private val bleScanner by lazy {
         bluetoothAdapter.bluetoothLeScanner
@@ -150,8 +121,8 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             viewDataBinding?.btnSend?.text = "Disconnect"
             Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
             bleManager.notify(device,
-                Const.UUID_SERVICE_DATA.toString(),
-                Const.UUID_CHARACTER_RECEIVE.toString(),
+                if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")) Const.UUID_SERVICE_DATA_GlucoMeter.toString() else Const.UUID_SERVICE_DATA_Oximeter.toString(),
+                if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")) Const.UUID_CHARACTER_RECEIVE_GlucoMeter.toString() else Const.UUID_CHARACTER_RECEIVE_Oximeter.toString(),
 
                 object : BleNotifyCallback {
                     override fun onCharacteristicChanged(
@@ -185,15 +156,6 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         }
                     }
                 })
-            var data = "D1"
-//            bleManager.write(device,Const.UUID_SERVICE_DATA.toString(),Const.UUID_CHARACTER_RECEIVE.toString(),hexStr2Bytes(data), object :BleWriteCallback {
-//                override fun onWriteSuccess(data: ByteArray, device: BleDevice) {
-//                    Log.d("MybLe", "1: ${data.toString()}")
-//                    Log.d("MybLe", "2: ${data.toHex()}")
-//                    Log.d("MybLe", "3: ${String(data)}")
-//                }
-//                override fun onFailure(failCode: Int, info: String, device: BleDevice) {}
-//            })
         }
 
         override fun onDisconnected(info: String, status: Int, device: BleDevice) {
@@ -219,6 +181,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             .build()
     }
 
+    //call while scan device
     private val scanCallback = object : ScanCallback() {
         @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
@@ -289,7 +252,8 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         viewDataBinding?.recyclerView?.setAdapter(deviceSearchAdapter)
         setUpAdapter()
         viewDataBinding?.btnSend?.setOnClickListener {
-            if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Oximeter")) {
+            if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Oximeter")||
+                viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")) {
                 checkPermissions()
             }else{
                 "Please Select device".toast()
@@ -466,40 +430,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         }
     }
 
-    private fun requestBluetoothPermission() {
 
-
-        //ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.BLUETOOTH), BLUETOOTH_REQUEST_CODE)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            requestMultiplePermissions.launch(
-                arrayOf(
-                    Manifest.permission.BLUETOOTH_SCAN,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                )
-            )
-        } else {
-            val requestBluetooth =
-                registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                    if (result.resultCode == AppCompatActivity.RESULT_OK) {
-                        "Bluetooth permission granted".toast()
-                    } else {
-                        "Bluetooth permission denied".toast()
-                    }
-                }
-
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            requestBluetooth.launch(enableBtIntent)
-        }
-    }
-
-    private fun activateBluetooth() {
-        val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-        startForResult.launch(intent)
-    }
-    //endregion
-
-    //region Location
     private fun checkLocationPermission(): Boolean {
         return when (context?.let {
             ContextCompat.checkSelfPermission(
@@ -512,10 +443,6 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         }
     }
 
-    private fun requestLocationPermission() {
-
-        activityResultLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -540,13 +467,6 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             }
     }
 
-    private fun activateLocation() {
-        locationIntent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-        startActivity(locationIntent)
-    }
-    //endregion
-
-    //region RecyclerView
     private fun setUpAdapter() {
         deviceSearchAdapter = context?.let { DeviceSearchAdapter(it, scanResults) }
         setupRecyclerView()
@@ -583,13 +503,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 }
             }
         } else {
-//            if (context?.let {
-//                    ContextCompat.checkSelfPermission(
-//                        it,
-//                        Manifest.permission.BLUETOOTH
-//                    )
-//                } == PackageManager.PERMISSION_GRANTED
-//            ) {
+             //start scan with specified scanOptions
             if(isConnected){
                 if( bleManager.connectedDevices.size>0){
                     bleManager.disconnectAll()
@@ -597,9 +511,17 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             }
             var filters: List<ScanFilter>? = null
             filters = ArrayList()
-            filters.add(
-                ScanFilter.Builder().setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA)).build()
-            )
+            if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Oximeter")) {
+                filters.add(
+                    ScanFilter.Builder().setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_Oximeter)).build()
+                )
+            }
+
+            if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")) {
+                filters.add(
+                    ScanFilter.Builder().setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_GlucoMeter)).build()
+                )
+            }
             scanResults.clear()
             deviceSearchAdapter?.setData(scanResults)
             bleScanner.startScan(filters, scanSettings, scanCallback)
@@ -613,13 +535,6 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     private fun stopScan() {
 
         Log.d("TAG", "scanResults: $scanResults")
-//        if (context?.let {
-//                ContextCompat.checkSelfPermission(
-//                    it,
-//                    Manifest.permission.BLUETOOTH
-//                )
-//            } == PackageManager.PERMISSION_GRANTED
-//        ) {
         bleScanner.stopScan(scanCallback)
         isScanning = false
 
@@ -636,10 +551,6 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 PackageManager.PERMISSION_GRANTED
     }
 
-    private fun isLocationEnabled(): Boolean {
-        val locationManager = context?.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-    }
 
     private fun BluetoothAdapter.isBluetoothEnabled(): Boolean {
         return this.isEnabled
@@ -776,31 +687,6 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         }
         return byteArray
     }
-    private fun setPermissions() {
 
-            //启动蓝牙
-            val enableBtIntent = Intent(
-                BluetoothAdapter.ACTION_REQUEST_ENABLE
-            )
-            if (context?.let {
-                    ActivityCompat.checkSelfPermission(
-                        it,
-                        Manifest.permission.BLUETOOTH_CONNECT
-                    )
-                } != PackageManager.PERMISSION_GRANTED
-            ) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                return
-            }
-            startActivityForResult(enableBtIntent, 12536)
-
-
-    }
 
 }
