@@ -14,6 +14,7 @@ class DataParser     //Constructor
 
     //Buffer queue
     private var bufferQueue = ByteArray(10)
+    private var type : String =""
 
     //Parse Runnable
     private var mParseRunnable: ParseRunnable? = null
@@ -46,14 +47,33 @@ class DataParser     //Constructor
         override fun run() {
             while (isStop) {
                 dat = data
-                packageData = IntArray(10)
+                if(type.equals("Oximeter")) {
+                    packageData = IntArray(10)
 
-                val spo2 = dat[7]
-                val pulseRate =  dat[6]
-                val pi =dat[8]/10
-                if (spo2>=35 && spo2 <= 100 && pulseRate <= 220) {
-                    mOxiParams.update(spo2.toInt(), pulseRate.toInt(), pi)
-                    mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
+                    val spo2 = dat[7]
+                    val pulseRate = dat[6]
+                    val pi = dat[8] / 10
+                    if (spo2 >= 35 && spo2 <= 100 && pulseRate <= 220) {
+                        mOxiParams.update(spo2.toInt(), pulseRate.toInt(), pi, 0)
+                        mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
+                    }
+                }else if (type.equals("Glucometer")){
+                    packageData = IntArray(8)
+                    val hi = dat[4]
+                    val low = dat[5]
+                    val hinumber = hi.toInt()
+                    val lownumber = low.toInt()
+                    val hinumberunsignedHex = String.format("%02X", hinumber and 0xff)
+                    val lownumberunsignedHex = String.format("%02X", lownumber and 0xff)
+                    val lownumberdecimal: Int = hinumberunsignedHex.toInt(16)
+                    val hinumberdecimal: Int = lownumberunsignedHex.toInt(16)
+                    Log.e("MybLe", lownumberdecimal.toString() )
+                    val glucoseMeasurement=lownumberdecimal+hinumberdecimal;
+if(glucoseMeasurement>0) {
+    mOxiParams.update(0, 0, 0, glucoseMeasurement)
+    mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
+}
+
                 }
             }
         }
@@ -63,9 +83,10 @@ class DataParser     //Constructor
      * Add the data received from USB or Bluetooth
      * @param dat
      */
-    fun add(dat: ByteArray) {
+    fun add(dat: ByteArray,type:String) {
             try {
                 bufferQueue=dat
+                this.type=type
             } catch (e: InterruptedException) {
                 e.printStackTrace()
             }
@@ -108,11 +129,15 @@ class DataParser     //Constructor
         var pi //perfusion index
                 = 0
             private set
+            var mmolLvalue //perfusion index
+                = 0
+            private set
 
-        fun update(spo2: Int, pulseRate: Int, pi: Int) {
+        fun update(spo2: Int, pulseRate: Int, pi: Int, mmolLvalue: Int) {
             this.spo2 = spo2
             this.pulseRate = pulseRate
             this.pi = pi
+            this.mmolLvalue = mmolLvalue
         }
     }
 }

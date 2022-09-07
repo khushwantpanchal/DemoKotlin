@@ -3,7 +3,6 @@ package com.ipath.hospitaldevice.ui.searchtest
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
@@ -14,7 +13,6 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.os.ParcelUuid
@@ -22,7 +20,6 @@ import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
-
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -39,7 +36,6 @@ import com.ficat.easyble.BleManager
 import com.ficat.easyble.gatt.callback.BleCallback
 import com.ficat.easyble.gatt.callback.BleConnectCallback
 import com.ficat.easyble.gatt.callback.BleNotifyCallback
-
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.normal.TedPermission
 import com.ipath.hospitaldevice.R
@@ -120,21 +116,45 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             viewDataBinding?.btnReport?.visibility= View.VISIBLE
             viewDataBinding?.btnSend?.text = "Disconnect"
             Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
+
             bleManager.notify(device,
                 if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")) Const.UUID_SERVICE_DATA_GlucoMeter.toString() else Const.UUID_SERVICE_DATA_Oximeter.toString(),
                 if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")) Const.UUID_CHARACTER_RECEIVE_GlucoMeter.toString() else Const.UUID_CHARACTER_RECEIVE_Oximeter.toString(),
 
                 object : BleNotifyCallback {
+
                     override fun onCharacteristicChanged(
                         data: ByteArray,
                         device: BleDevice
                     ) {
-                        if (data.size == 10) {
-                            mDataParser!!.add(data!!)
-                            Log.e("MybLe", "add: " + Arrays.toString(data))
-                            Log.d("MybLe", "Intent1: ${data.toString()}")
-                            Log.d("MybLe", "hex: ${data.toHex()}")
-                            Log.d("MybLe", "Intent3: ${String(data)}")
+                        if (viewDataBinding?.deviceList?.selectedItem.toString()
+                                .equals("Oximeter")
+                        ) {
+
+                            if (data.size == 10) {
+                                mDataParser!!.add(data!!,"Oximeter")
+                                Log.e("MybLe1", "add: " + Arrays.toString(data))
+//                            Log.d("MybLe", "Intent1: ${data.toString()}")
+//                            Log.d("MybLe", "hex: ${data.toHex()}")
+//                            Log.d("MybLe", "Intent3: ${String(data)}")
+                            }
+                        }else if (viewDataBinding?.deviceList?.selectedItem.toString()
+                                .equals("Glucometer")) {
+
+                            if (!Arrays.toString(data)
+                                    .equals("[-2, 106, 117, 90, 85, -86, -69, -52]")&&!Arrays.toString(data)
+                                    .equals("[-2, 106, 117, 90, 85, -69, -69, -52]")
+                            ) {
+                                val de = data[7]
+                                if(de.toInt()>5 || de.toInt()<0 ) {
+                                    mDataParser!!.add(data!!,"Glucometer")
+
+                                    Log.e("MybLe1", "add: " + Arrays.toString(data))
+                                }
+//                                    Log.d("MybLe", "Intent1: ${data.toString()}")
+//                                    Log.d("MybLe", "hex: ${data.toHex()}")
+//                                    Log.d("MybLe", "Intent3: ${String(data)}")
+                            }
                         }
                     }
 
@@ -150,7 +170,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                             BleCallback.FAIL_DISCONNECTED -> {}
                             BleCallback.FAIL_OTHER -> {}
                             else -> {
-
+                                Log.d("MybLe", "Intent: ${device.connected}")
 
                             }
                         }
@@ -331,10 +351,26 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 
             override fun onOxiParamsChanged(params: DataParser.OxiParams?) {
                 runBlocking(Dispatchers.Main) {
-                    viewDataBinding?.tvStatus?.setText(
-                        "SpO2: " + params?.spo2
-                            .toString() + "   Pulse Rate:" + params?.pulseRate
-                    )
+
+                    if( viewDataBinding?.deviceList?.selectedItem.toString().equals("Oximeter")) {
+                        viewDataBinding?.tvStatus?.setText(
+                            "SpO2: " + params?.spo2
+                                .toString() + "   Pulse Rate:" + params?.pulseRate
+                        )
+                    }else if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")){
+                        var ml: Int =(params!!.mmolLvalue)
+                        var result:Double=ml.toDouble()/18
+                        val number:Double = result
+                        val number3digits:Double = String.format("%.3f", number).toDouble()
+                        val number2digits:Double = String.format("%.2f", number3digits).toDouble()
+                        val solution:Double = String.format("%.1f", number2digits).toDouble()
+                        viewDataBinding?.tvStatus?.setText(
+                            "mg/dL: " + (params?.mmolLvalue)
+                                .toString() + "   mmol/L: " + (solution).toString()
+                        )
+                    }else{
+
+                    }
                 }
             }
 
@@ -524,7 +560,13 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             }
             scanResults.clear()
             deviceSearchAdapter?.setData(scanResults)
-            bleScanner.startScan(filters, scanSettings, scanCallback)
+//             if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")) {
+
+                bleScanner.startScan(filters, scanSettings, scanCallback)
+//            }else{
+//                 bleScanner.startScan(filters, scanSettings, scanCallback)
+//
+//             }
             isScanning = true
             Log.d("TAG", "scanResults: $scanResults")
 //            }
@@ -578,7 +620,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 
     override fun onReceiveData(dat: ByteArray?) {
 
-        mDataParser!!.add(dat!!)
+        mDataParser!!.add(dat!!,viewDataBinding?.deviceList?.selectedItem.toString())
     }
 
     override fun onServicesDiscovered() {

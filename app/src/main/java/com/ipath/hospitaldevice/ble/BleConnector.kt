@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.util.Log
 import com.berry_med.spo2_ble.data.Const
+import com.google.gson.Gson
 
 /**
  * Created by ZXX on 2017/4/28.
@@ -146,6 +147,7 @@ class BleController private constructor(stateListener: StateListener) {
                 mDataService = service
             }
         }
+        Log.e("MYBLE", "initCharacteristic: "+Gson().toJson(services).toString(), );
         if (mDataService != null) {
             val characteristics = mDataService.characteristics
             for (ch in characteristics) {
