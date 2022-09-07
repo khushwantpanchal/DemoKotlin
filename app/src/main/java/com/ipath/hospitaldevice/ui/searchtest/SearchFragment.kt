@@ -63,6 +63,10 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             context?.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothManager.adapter
     }
+var sp02="";
+var beat="";
+var GluecosedL="";
+var GluecosedLmmolLvalue="";
 
     private var mDataParser: DataParser? = null
     private var mBleControl: BleController? = null
@@ -300,8 +304,10 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             bundle.putString("pname", arg)
             bundle.putString("email", email)
             bundle.putString("mobile", mobile)
-            bundle.putString("sp02", "85")
-            bundle.putString("beat", "75")
+            bundle.putString("sp02", sp02)
+            bundle.putString("beat", beat)
+            bundle.putString("GluecosedL", GluecosedL)
+            bundle.putString("GluecosedLmmolLvalue", GluecosedLmmolLvalue)
             findNavController().navigate(R.id.action_patientFragment_to_reportFragment, bundle);
         }
 //        recyclerClear.setOnClickListener {
@@ -318,6 +324,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 //                    mSearchDialog!!.show()
 //                    mBtDevices.clear()
 //                    mBtDevicesAdapter!!.notifyDataSetChanged()
+
                     viewDataBinding?.tvParams?.setText(
                         "Name:" + scanResults.get(position).device.name + "     " + "Mac:" + scanResults.get(
                             position
@@ -353,6 +360,8 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 runBlocking(Dispatchers.Main) {
 
                     if( viewDataBinding?.deviceList?.selectedItem.toString().equals("Oximeter")) {
+                        sp02=params?.spo2.toString()
+                        beat=params?.pulseRate.toString()
                         viewDataBinding?.tvStatus?.setText(
                             "SpO2: " + params?.spo2
                                 .toString() + "   Pulse Rate:" + params?.pulseRate
@@ -364,6 +373,9 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         val number3digits:Double = String.format("%.3f", number).toDouble()
                         val number2digits:Double = String.format("%.2f", number3digits).toDouble()
                         val solution:Double = String.format("%.1f", number2digits).toDouble()
+                        GluecosedL=params?.mmolLvalue.toString()
+                        GluecosedLmmolLvalue=solution.toString()
+
                         viewDataBinding?.tvStatus?.setText(
                             "mg/dL: " + (params?.mmolLvalue)
                                 .toString() + "   mmol/L: " + (solution).toString()

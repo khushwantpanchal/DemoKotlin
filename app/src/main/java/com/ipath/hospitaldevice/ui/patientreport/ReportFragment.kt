@@ -106,14 +106,23 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
         val mobile = arguments?.getString("mobile")
         val sp02 = arguments?.getString("sp02")
         val beat = arguments?.getString("beat")
+        val GluecosedL = arguments?.getString("GluecosedL")
+        val GluecosedLmmolLvalue = arguments?.getString("GluecosedLmmolLvalue")
 
         viewDataBinding?.pName?.text = arg
         viewDataBinding?.pMobile?.text = mobile
         viewDataBinding?.pEmail?.text = email
-        viewDataBinding?.pResult?.setText(
-            "SpO2: " + sp02
-                .toString() + "   Pulse Rate:" + beat
-        )
+        if(!sp02.isNullOrEmpty()) {
+            viewDataBinding?.pResult?.setText(
+                "SpO2: " + sp02
+                    .toString() + "   Pulse Rate:" + beat
+            )
+        }else{
+            viewDataBinding?.pResult?.setText(
+                "mg/dL: " + (GluecosedL)
+                    .toString() + "   mmol/L: " + (GluecosedLmmolLvalue).toString()
+            )
+        }
         viewDataBinding?.btnNewTest?.setOnClickListener {
             findNavController().navigate(ReportFragmentDirections.actionReportFragmentToMainFragment())
         }
