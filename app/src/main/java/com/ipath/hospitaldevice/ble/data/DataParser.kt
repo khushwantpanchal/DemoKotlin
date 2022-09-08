@@ -1,6 +1,7 @@
 package com.ipath.hospitaldevice.ble.data
 
 import android.util.Log
+import com.berry_med.spo2_ble.data.Const
 import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
 
@@ -14,11 +15,12 @@ class DataParser     //Constructor
 
     //Buffer queue
     private var bufferQueue = ByteArray(10)
-    private var type : String =""
+    private var type: String = ""
 
     //Parse Runnable
     private var mParseRunnable: ParseRunnable? = null
     private var isStop = true
+    private var DataUpdated = true
     private val mOxiParams = OxiParams()
 
     /**
@@ -35,7 +37,8 @@ class DataParser     //Constructor
     }
 
     fun stop() {
-        isStop = true
+        isStop = false
+
     }
 
     /**
@@ -46,34 +49,81 @@ class DataParser     //Constructor
         lateinit var packageData: IntArray
         override fun run() {
             while (isStop) {
-                dat = data
-                if(type.equals("Oximeter")) {
-                    packageData = IntArray(10)
+                if(DataUpdated) {
+                    dat = data
+                    if (type.equals(Const.Oximeter)) {
+                        packageData = IntArray(10)
 
-                    val spo2 = dat[7]
-                    val pulseRate = dat[6]
-                    val pi = dat[8] / 10
-                    if (spo2 >= 35 && spo2 <= 100 && pulseRate <= 220) {
-                        mOxiParams.update(spo2.toInt(), pulseRate.toInt(), pi, 0)
-                        mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
+                        val spo2 = dat[7]
+                        val pulseRate = dat[6]
+                        val pi = dat[8] / 10
+                        if (spo2 >= 35 && spo2 <= 100 && pulseRate <= 220) {
+                            mOxiParams.update(spo2.toInt(), pulseRate.toInt(), pi, 0, 0.0, 0.0)
+                            mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
+                        }
+                        DataUpdated=false
+                    } else if (type.equals(Const.Glucometer)) {
+                        packageData = IntArray(8)
+                        val hi = dat[4]
+                        val low = dat[5]
+                        val hinumber = hi.toInt()
+                        val lownumber = low.toInt()
+                        val hinumberunsignedHex = String.format("%02X", hinumber and 0xff)
+                        val lownumberunsignedHex = String.format("%02X", lownumber and 0xff)
+                        val lownumberdecimal: Int = hinumberunsignedHex.toInt(16)
+                        val hinumberdecimal: Int = lownumberunsignedHex.toInt(16)
+                        Log.e("MybLe", lownumberdecimal.toString())
+                        val glucoseMeasurement = lownumberdecimal + hinumberdecimal;
+                        if (glucoseMeasurement > 0) {
+                            mOxiParams.update(0, 0, 0, glucoseMeasurement, 0.0, 0.0)
+                            mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
+                        }
+                        DataUpdated=false
+                    } else if (type.equals(Const.Thermometer)) {
+                        packageData = IntArray(7)
+                        val last = dat[4]
+                        val first = dat[5]
+                        val lastnumber = last.toInt()
+                        val firstnumber = first.toInt()
+                        val lastnumbersignedHex = String.format("%02X", lastnumber and 0xff)
+                        val firstnumbersignedHex = String.format("%02X", firstnumber and 0xff)
+                        var hexString = firstnumbersignedHex + lastnumbersignedHex;
+                        Log.e("MybLe", hexString.toString())
+
+                        val temrature: Int = hexString.toInt(16)
+
+
+                        if (firstnumber == 1) {
+                            var Celcius = temrature.toDouble() / 10
+                            var Fahrenheit = (Celcius * (9 / 5)) + 32
+                            if (temrature > 0) {
+                                mOxiParams.update(
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    Celcius.toDouble(),
+                                    Fahrenheit.toDouble()
+                                )
+                                mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
+                            }
+                        } else {
+                            var Fahrenheit: Double = temrature.toDouble() / 10
+                            var Celcius = ((Fahrenheit - 32) * 5) / 9
+                            if (temrature > 0) {
+                                mOxiParams.update(
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    Celcius.toDouble(),
+                                    Fahrenheit.toDouble()
+                                )
+                                mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
+                            }
+                        }
+                        DataUpdated=false
                     }
-                }else if (type.equals("Glucometer")){
-                    packageData = IntArray(8)
-                    val hi = dat[4]
-                    val low = dat[5]
-                    val hinumber = hi.toInt()
-                    val lownumber = low.toInt()
-                    val hinumberunsignedHex = String.format("%02X", hinumber and 0xff)
-                    val lownumberunsignedHex = String.format("%02X", lownumber and 0xff)
-                    val lownumberdecimal: Int = hinumberunsignedHex.toInt(16)
-                    val hinumberdecimal: Int = lownumberunsignedHex.toInt(16)
-                    Log.e("MybLe", lownumberdecimal.toString() )
-                    val glucoseMeasurement=lownumberdecimal+hinumberdecimal;
-if(glucoseMeasurement>0) {
-    mOxiParams.update(0, 0, 0, glucoseMeasurement)
-    mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
-}
-
                 }
             }
         }
@@ -83,13 +133,14 @@ if(glucoseMeasurement>0) {
      * Add the data received from USB or Bluetooth
      * @param dat
      */
-    fun add(dat: ByteArray,type:String) {
-            try {
-                bufferQueue=dat
-                this.type=type
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
+    fun add(dat: ByteArray, type: String) {
+        try {
+            bufferQueue = dat
+            this.type = type
+            DataUpdated=true
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
 
         Log.e(TAG, "add: " + Arrays.toString(dat))
 
@@ -103,7 +154,7 @@ if(glucoseMeasurement>0) {
     private val data: ByteArray
         private get() {
 
-                return bufferQueue
+            return bufferQueue
 
 
         }
@@ -129,15 +180,23 @@ if(glucoseMeasurement>0) {
         var pi //perfusion index
                 = 0
             private set
-            var mmolLvalue //perfusion index
+        var mmolLvalue //perfusion index
                 = 0
             private set
+        var Celcius //perfusion index
+                = 0.0
+            private set
+        var Fahrenheit //perfusion index
+                = 0.0
+            private set
 
-        fun update(spo2: Int, pulseRate: Int, pi: Int, mmolLvalue: Int) {
+        fun update(spo2: Int, pulseRate: Int, pi: Int, mmolLvalue: Int, Celcius: Double, Fahrenheit: Double) {
             this.spo2 = spo2
             this.pulseRate = pulseRate
             this.pi = pi
             this.mmolLvalue = mmolLvalue
+            this.Celcius = Celcius
+            this.Fahrenheit = Fahrenheit
         }
     }
 }

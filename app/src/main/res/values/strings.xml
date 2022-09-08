@@ -16,10 +16,10 @@
     <string name="searchdevice">Search Device</string>
     <string name="select_device">Select Device</string>
     <string-array name="devicelist">
-        <item >Select Report</item>
+        <item>Select Report</item>
         <item >Oximeter</item>
         <item>Glucometer</item>
-<!--        <item >Thermometer</item>-->
+        <item >Thermometer</item>
 <!--        <item >ECG</item>-->
 <!--        <item >Blood Pressure</item>-->
 <!--        <item >Medicine Pill Box</item>-->

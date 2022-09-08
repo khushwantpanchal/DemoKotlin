@@ -48,6 +48,7 @@ import com.ipath.hospitaldevice.databinding.SearchFragmentBinding
 import com.ipath.hospitaldevice.ui.adapter.DeviceSearchAdapter
 import kotlinx.coroutines.*
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.coroutines.CoroutineContext
 
 
@@ -63,10 +64,12 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             context?.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothManager.adapter
     }
-var sp02="";
-var beat="";
-var GluecosedL="";
-var GluecosedLmmolLvalue="";
+    var sp02 = "";
+    var beat = "";
+    var GluecosedL = "";
+    var GluecosedLmmolLvalue = "";
+    var Celcius = "";
+    var Fahrenheit = "";
 
     private var mDataParser: DataParser? = null
     private var mBleControl: BleController? = null
@@ -96,16 +99,16 @@ var GluecosedLmmolLvalue="";
 
         override fun onFailure(failCode: Int, info: String, device: BleDevice) {
             if (failCode == BleConnectCallback.FAIL_CONNECT_TIMEOUT) {
-                viewDataBinding?.btnRetry?.visibility= View.GONE
-                viewDataBinding?.btnReport?.visibility= View.GONE
-                isConnected=false
+                viewDataBinding?.btnRetry?.visibility = View.GONE
+                viewDataBinding?.btnReport?.visibility = View.GONE
+                isConnected = false
                 bleManager.disconnect(device.address)
                 //connection timeout
                 Log.d("MybLe", "Intent: $failCode")
             } else {
-                viewDataBinding?.btnRetry?.visibility= View.GONE
-                viewDataBinding?.btnReport?.visibility= View.GONE
-                isConnected=false
+                viewDataBinding?.btnRetry?.visibility = View.GONE
+                viewDataBinding?.btnReport?.visibility = View.GONE
+                isConnected = false
                 bleManager.disconnect(device.address)
                 //connection fail due to other reasons
                 Log.d("MybLe", "Intent: $failCode")
@@ -114,16 +117,24 @@ var GluecosedLmmolLvalue="";
 
         override fun onConnected(device: BleDevice) {
 
-            isConnected=true
+            isConnected = true
             Log.d("MybLe", "Intent: ${device.connected}")
-            viewDataBinding?.btnRetry?.visibility= View.VISIBLE
-            viewDataBinding?.btnReport?.visibility= View.VISIBLE
+            viewDataBinding?.btnRetry?.visibility = View.VISIBLE
+            viewDataBinding?.btnReport?.visibility = View.VISIBLE
             viewDataBinding?.btnSend?.text = "Disconnect"
             Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
 
             bleManager.notify(device,
-                if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")) Const.UUID_SERVICE_DATA_GlucoMeter.toString() else Const.UUID_SERVICE_DATA_Oximeter.toString(),
-                if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")) Const.UUID_CHARACTER_RECEIVE_GlucoMeter.toString() else Const.UUID_CHARACTER_RECEIVE_Oximeter.toString(),
+                if (viewDataBinding?.deviceList?.selectedItem.toString()
+                        .equals(Const.Glucometer)
+                ) Const.UUID_SERVICE_DATA_GlucoMeter.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString()
+                        .equals(Const.Oximeter)
+                ) Const.UUID_SERVICE_DATA_Oximeter.toString() else Const.UUID_SERVICE_DATA_Thermometer.toString(),
+                if (viewDataBinding?.deviceList?.selectedItem.toString()
+                        .equals(Const.Glucometer)
+                ) Const.UUID_CHARACTER_RECEIVE_GlucoMeter.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString()
+                        .equals(Const.Oximeter)
+                ) Const.UUID_CHARACTER_RECEIVE_Oximeter.toString() else Const.UUID_CHARACTER_RECEIVE_Thermometer.toString(),
 
                 object : BleNotifyCallback {
 
@@ -131,27 +142,25 @@ var GluecosedLmmolLvalue="";
                         data: ByteArray,
                         device: BleDevice
                     ) {
-                        if (viewDataBinding?.deviceList?.selectedItem.toString()
-                                .equals("Oximeter")
-                        ) {
 
+                        if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) {
+                            mDataParser!!.start()
                             if (data.size == 10) {
-                                mDataParser!!.add(data!!,"Oximeter")
+                                mDataParser!!.start()
+                                mDataParser!!.add(data!!, Const.Oximeter)
                                 Log.e("MybLe1", "add: " + Arrays.toString(data))
 //                            Log.d("MybLe", "Intent1: ${data.toString()}")
 //                            Log.d("MybLe", "hex: ${data.toHex()}")
 //                            Log.d("MybLe", "Intent3: ${String(data)}")
                             }
-                        }else if (viewDataBinding?.deviceList?.selectedItem.toString()
-                                .equals("Glucometer")) {
+                        } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer)) {
 
-                            if (!Arrays.toString(data)
-                                    .equals("[-2, 106, 117, 90, 85, -86, -69, -52]")&&!Arrays.toString(data)
-                                    .equals("[-2, 106, 117, 90, 85, -69, -69, -52]")
-                            ) {
+                            if (!Arrays.toString(data).equals("[-2, 106, 117, 90, 85, -86, -69, -52]") &&
+                                !Arrays.toString(data).equals("[-2, 106, 117, 90, 85, -69, -69, -52]")) {
                                 val de = data[7]
-                                if(de.toInt()>5 || de.toInt()<0 ) {
-                                    mDataParser!!.add(data!!,"Glucometer")
+                                if (de.toInt() > 5 || de.toInt() < 0) {
+                                    mDataParser!!.start()
+                                    mDataParser!!.add(data!!, Const.Glucometer)
 
                                     Log.e("MybLe1", "add: " + Arrays.toString(data))
                                 }
@@ -159,6 +168,21 @@ var GluecosedLmmolLvalue="";
 //                                    Log.d("MybLe", "hex: ${data.toHex()}")
 //                                    Log.d("MybLe", "Intent3: ${String(data)}")
                             }
+                        } else {
+                            Log.e("MybLe1", "add: " + Arrays.toString(data))
+                            for (datalog in data) {
+                                val hi = datalog
+                                val hinumber = hi.toInt()
+                                val hinumberunsignedHex = String.format("%02X", hinumber and 0xff)
+                                val lownumberdecimal: Int = hinumberunsignedHex.toInt(16)
+                                Log.e(
+                                    "MybLe  current",
+                                    hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString()
+                                )
+                            }
+                            mDataParser!!.start()
+                            mDataParser!!.add(data, Const.Thermometer)
+
                         }
                     }
 
@@ -183,11 +207,11 @@ var GluecosedLmmolLvalue="";
         }
 
         override fun onDisconnected(info: String, status: Int, device: BleDevice) {
-            isConnected=false
-            viewDataBinding?.btnRetry?.visibility= View.GONE
-            viewDataBinding?.btnReport?.visibility= View.GONE
-            viewDataBinding?.tvStatus?.text=""
-            viewDataBinding?.tvParams?.text=""
+            isConnected = false
+            viewDataBinding?.btnRetry?.visibility = View.GONE
+            viewDataBinding?.btnReport?.visibility = View.GONE
+            viewDataBinding?.tvStatus?.text = ""
+            viewDataBinding?.tvParams?.text = ""
             Toast.makeText(context, "Disconnected", Toast.LENGTH_SHORT).show()
             viewDataBinding?.btnSend?.setText("Search")
 
@@ -211,19 +235,23 @@ var GluecosedLmmolLvalue="";
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
             super.onScanResult(callbackType, result)
             if (result != null) {
-                val indexQuery =
-                    scanResults.indexOfFirst { it.device.address == result.device.address }
-                if (indexQuery != -1) {
-                    scanResults[indexQuery] = result
-                    deviceSearchAdapter?.notifyItemChanged(indexQuery)
-                } else {
-                    scanResults.add(result)
-                    scanResults.sortByDescending { it.rssi }
-                    val predicate = Predicate { x: ScanResult -> x.device.name == null }
-                    removeItems(scanResults, predicate)
+
+                    val indexQuery =
+                        scanResults.indexOfFirst { it.device.address == result.device.address }
+                    if (indexQuery != -1) {
+                        scanResults[indexQuery] = result
+                        deviceSearchAdapter?.notifyItemChanged(indexQuery)
+                    } else {
+                        if ((viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)&&result.device.name!=null&&result.device.name.contains(Const.Thermometer))||!viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
+
+                            scanResults.add(result)
+                            scanResults.sortByDescending { it.rssi }
+                            val predicate = Predicate { x: ScanResult -> x.device.name == null }
+                            removeItems(scanResults, predicate)
+                        }
+                    }
                 }
             }
-        }
 
         override fun onScanFailed(errorCode: Int) {
             super.onScanFailed(errorCode)
@@ -256,7 +284,7 @@ var GluecosedLmmolLvalue="";
 
     override fun setupUI() {
         setupTitle(getString(R.string.searchdetails))
-        setupBackButtonEnable(true,true)
+        setupBackButtonEnable(true, true)
         val arg = arguments?.getString("pname")
         val email = arguments?.getString("email")
         val mobile = arguments?.getString("mobile")
@@ -276,10 +304,12 @@ var GluecosedLmmolLvalue="";
         viewDataBinding?.recyclerView?.setAdapter(deviceSearchAdapter)
         setUpAdapter()
         viewDataBinding?.btnSend?.setOnClickListener {
-            if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Oximeter")||
-                viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")) {
+            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter) ||
+                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer) ||
+                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)
+            ) {
                 checkPermissions()
-            }else{
+            } else {
                 "Please Select device".toast()
             }
         }
@@ -290,13 +320,13 @@ var GluecosedLmmolLvalue="";
 //            bundle.putString("email", email)
 //            bundle.putString("mobile", mobile)
 //            findNavController().navigate(R.id.action_patientFragment, bundle);
-            if(isConnected) {
+            if (isConnected) {
                 stopScan()
                 bleManager.disconnectAll()
             }
         }
         viewDataBinding?.btnReport?.setOnClickListener {
-            if(isConnected) {
+            if (isConnected) {
                 stopScan()
                 bleManager.disconnectAll()
             }
@@ -308,6 +338,8 @@ var GluecosedLmmolLvalue="";
             bundle.putString("beat", beat)
             bundle.putString("GluecosedL", GluecosedL)
             bundle.putString("GluecosedLmmolLvalue", GluecosedLmmolLvalue)
+            bundle.putString("Celcius", Celcius)
+            bundle.putString("Fahrenheit", Fahrenheit)
             findNavController().navigate(R.id.action_patientFragment_to_reportFragment, bundle);
         }
 //        recyclerClear.setOnClickListener {
@@ -359,28 +391,49 @@ var GluecosedLmmolLvalue="";
             override fun onOxiParamsChanged(params: DataParser.OxiParams?) {
                 runBlocking(Dispatchers.Main) {
 
-                    if( viewDataBinding?.deviceList?.selectedItem.toString().equals("Oximeter")) {
-                        sp02=params?.spo2.toString()
-                        beat=params?.pulseRate.toString()
+                    if (viewDataBinding?.deviceList?.selectedItem.toString()
+                            .equals(Const.Oximeter)
+                    ) {
+                        sp02 = params?.spo2.toString()
+                        beat = params?.pulseRate.toString()
                         viewDataBinding?.tvStatus?.setText(
                             "SpO2: " + params?.spo2
                                 .toString() + "   Pulse Rate:" + params?.pulseRate
                         )
-                    }else if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")){
-                        var ml: Int =(params!!.mmolLvalue)
-                        var result:Double=ml.toDouble()/18
-                        val number:Double = result
-                        val number3digits:Double = String.format("%.3f", number).toDouble()
-                        val number2digits:Double = String.format("%.2f", number3digits).toDouble()
-                        val solution:Double = String.format("%.1f", number2digits).toDouble()
-                        GluecosedL=params?.mmolLvalue.toString()
-                        GluecosedLmmolLvalue=solution.toString()
+                    } else if (viewDataBinding?.deviceList?.selectedItem.toString()
+                            .equals(Const.Glucometer)
+                    ) {
+                        var ml: Int = (params!!.mmolLvalue)
+                        var result: Double = ml.toDouble() / 18
+                        val number: Double = result
+                        val number3digits: Double = String.format("%.3f", number).toDouble()
+                        val number2digits: Double = String.format("%.2f", number3digits).toDouble()
+                        val solution: Double = String.format("%.1f", number2digits).toDouble()
+                        GluecosedL = params?.mmolLvalue.toString()
+                        GluecosedLmmolLvalue = solution.toString()
 
                         viewDataBinding?.tvStatus?.setText(
                             "mg/dL: " + (params?.mmolLvalue)
                                 .toString() + "   mmol/L: " + (solution).toString()
                         )
-                    }else{
+                    } else if (viewDataBinding?.deviceList?.selectedItem.toString()
+                            .equals(Const.Thermometer)
+                    ) {
+
+
+                        Celcius = params!!.Celcius.toString()
+                        val solutionCelcius: Double =
+                            String.format("%.1f", Celcius.toDouble()).toDouble()
+                        Celcius = solutionCelcius.toString()
+                        Fahrenheit = params!!.Fahrenheit.toString()
+                        val solutionFahrenheit: Double =
+                            String.format("%.1f", Fahrenheit.toDouble()).toDouble()
+                        Fahrenheit = solutionFahrenheit.toString()
+                        viewDataBinding?.tvStatus?.setText(
+                            (Celcius)
+                                .toString() + " °C" + "  " + (Fahrenheit).toString() + " °F"
+                        )
+                    } else {
 
                     }
                 }
@@ -393,7 +446,7 @@ var GluecosedLmmolLvalue="";
             }
 
         })
-        mDataParser!!.start()
+
 
         mBleControl = BleController.getDefaultBleController(this)
         mBleControl!!.enableBtAdapter()
@@ -439,10 +492,14 @@ var GluecosedLmmolLvalue="";
 
         if (BleManager.supportBle(context)) {
             if (BleManager.isBluetoothOn()) {
-                if((hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)&&hasPermission(Manifest.permission.ACCESS_FINE_LOCATION))||(hasPermission(Manifest.permission.BLUETOOTH_SCAN) && hasPermission(Manifest.permission.BLUETOOTH_CONNECT))){
+                if ((hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION) && hasPermission(
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    )) || (hasPermission(Manifest.permission.BLUETOOTH_SCAN) && hasPermission(
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    ))
+                ) {
                     startScan()
-
-                }else{
+                } else {
                     askPermission()
                 }
 
@@ -544,41 +601,50 @@ var GluecosedLmmolLvalue="";
         if (isScanning) {
 
             stopScan()
-            if(isConnected){
+            if (isConnected) {
 
-                if( bleManager.connectedDevices.size>0){
+                if (bleManager.connectedDevices.size > 0) {
                     bleManager.disconnectAll()
                 }
             }
         } else {
-             //start scan with specified scanOptions
-            if(isConnected){
-                if( bleManager.connectedDevices.size>0){
+            //start scan with specified scanOptions
+            if (isConnected) {
+                if (bleManager.connectedDevices.size > 0) {
                     bleManager.disconnectAll()
                 }
             }
             var filters: List<ScanFilter>? = null
             filters = ArrayList()
-            if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Oximeter")) {
+            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) {
                 filters.add(
-                    ScanFilter.Builder().setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_Oximeter)).build()
+                    ScanFilter.Builder()
+                        .setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_Oximeter)).build()
                 )
             }
 
-            if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")) {
+            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer)) {
                 filters.add(
-                    ScanFilter.Builder().setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_GlucoMeter)).build()
+                    ScanFilter.Builder()
+                        .setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_GlucoMeter)).build()
+                )
+            }
+
+            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
+                filters.add(
+                    ScanFilter.Builder()
+                        .setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_Thermometer)).build()
                 )
             }
             scanResults.clear()
             deviceSearchAdapter?.setData(scanResults)
-//             if(viewDataBinding?.deviceList?.selectedItem.toString().equals("Glucometer")) {
+            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
 
+                bleScanner.startScan(null, scanSettings, scanCallback)
+            } else {
                 bleScanner.startScan(filters, scanSettings, scanCallback)
-//            }else{
-//                 bleScanner.startScan(filters, scanSettings, scanCallback)
 //
-//             }
+            }
             isScanning = true
             Log.d("TAG", "scanResults: $scanResults")
 //            }
@@ -624,7 +690,7 @@ var GluecosedLmmolLvalue="";
     }
 
     override fun onDisconnected() {
-        isConnected=false;
+        isConnected = false;
         Toast.makeText(context, "Disconnected", Toast.LENGTH_SHORT).show()
         viewDataBinding?.btnSend?.setText("Search")
 //        llChangeName.setVisibility(View.GONE)
@@ -632,7 +698,7 @@ var GluecosedLmmolLvalue="";
 
     override fun onReceiveData(dat: ByteArray?) {
 
-        mDataParser!!.add(dat!!,viewDataBinding?.deviceList?.selectedItem.toString())
+        mDataParser!!.add(dat!!, viewDataBinding?.deviceList?.selectedItem.toString())
     }
 
     override fun onServicesDiscovered() {
@@ -668,21 +734,21 @@ var GluecosedLmmolLvalue="";
         context?.let { mBleControl!!.unregisterBtReceiver(it) }
     }
 
-    fun askPermission(){
+    fun askPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-      var   permissionlistener = object : PermissionListener {
-            override fun onPermissionGranted() {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            var permissionlistener = object : PermissionListener {
+                override fun onPermissionGranted() {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 
+                    }
+                }
+
+                override fun onPermissionDenied(deniedPermissions: List<String>) {
+//                setPermissions()
+                    //              Toast.makeText(DashBoard.this, "Permission Denied\n" + deniedPermissions.toString(), Toast.LENGTH_SHORT).show();
                 }
             }
-
-            override fun onPermissionDenied(deniedPermissions: List<String>) {
-//                setPermissions()
-                //              Toast.makeText(DashBoard.this, "Permission Denied\n" + deniedPermissions.toString(), Toast.LENGTH_SHORT).show();
-            }
-        }
-        if (!hasPermission(Manifest.permission.BLUETOOTH_SCAN) || !hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
+            if (!hasPermission(Manifest.permission.BLUETOOTH_SCAN) || !hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
 
                 TedPermission.create()
                     .setPermissionListener(permissionlistener)
@@ -697,8 +763,8 @@ var GluecosedLmmolLvalue="";
                     )
                     .check()
             }
-        }else{
-            var   permissionlistener = object : PermissionListener {
+        } else {
+            var permissionlistener = object : PermissionListener {
                 override fun onPermissionGranted() {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 
@@ -710,7 +776,10 @@ var GluecosedLmmolLvalue="";
                     //              Toast.makeText(DashBoard.this, "Permission Denied\n" + deniedPermissions.toString(), Toast.LENGTH_SHORT).show();
                 }
             }
-            if (!hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)||!hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) ) {
+            if (!hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION) || !hasPermission(
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                )
+            ) {
 
                 TedPermission.create()
                     .setPermissionListener(permissionlistener)
@@ -727,6 +796,7 @@ var GluecosedLmmolLvalue="";
             }
         }
     }
+
     fun hexStr2Bytes(str: String?): ByteArray? {
         if (str == null) {
             return null
