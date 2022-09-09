@@ -10,6 +10,7 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -31,6 +32,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.berry_med.spo2_ble.data.Const
+import com.contec.pm10.code.bean.DeviceParameter
+import com.contec.pm10.code.bean.DeviceType
+import com.contec.pm10.code.bean.EcgData
+import com.contec.pm10.code.bean.SdkConstants
+import com.contec.pm10.code.callback.*
+import com.contec.pm10.code.connect.ContecSdk
+import com.contec.pm10.code.tools.Utils
 import com.ficat.easyble.BleDevice
 import com.ficat.easyble.BleManager
 import com.ficat.easyble.gatt.callback.BleCallback
@@ -46,9 +54,9 @@ import com.ipath.hospitaldevice.ble.adapter.SearchDevicesDialog
 import com.ipath.hospitaldevice.ble.data.DataParser
 import com.ipath.hospitaldevice.databinding.SearchFragmentBinding
 import com.ipath.hospitaldevice.ui.adapter.DeviceSearchAdapter
+import com.ipath.hospitaldevice.utils.Utils.getManufacturerSpecificData
 import kotlinx.coroutines.*
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.coroutines.CoroutineContext
 
 
@@ -56,14 +64,18 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     CoroutineScope, BleController.StateListener {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var deviceSearchAdapter: DeviceSearchAdapter? = null
+
     lateinit var bleManager: BleManager
     var isConnected = false
     private val searchVM: SearchVM by viewModels()
+    private var isListen = false
     private val bluetoothAdapter: BluetoothAdapter by lazy {
         val bluetoothManager =
             context?.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothManager.adapter
     }
+    private val ecgDataArrayList = ArrayList<EcgData>()
+    private var contecSdk: ContecSdk? = null
     var sp02 = "";
     var beat = "";
     var GluecosedL = "";
@@ -125,24 +137,13 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
 
             bleManager.notify(device,
-                if (viewDataBinding?.deviceList?.selectedItem.toString()
-                        .equals(Const.Glucometer)
-                ) Const.UUID_SERVICE_DATA_GlucoMeter.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString()
-                        .equals(Const.Oximeter)
-                ) Const.UUID_SERVICE_DATA_Oximeter.toString() else Const.UUID_SERVICE_DATA_Thermometer.toString(),
-                if (viewDataBinding?.deviceList?.selectedItem.toString()
-                        .equals(Const.Glucometer)
-                ) Const.UUID_CHARACTER_RECEIVE_GlucoMeter.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString()
-                        .equals(Const.Oximeter)
-                ) Const.UUID_CHARACTER_RECEIVE_Oximeter.toString() else Const.UUID_CHARACTER_RECEIVE_Thermometer.toString(),
-
+                if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer))Const.UUID_SERVICE_DATA_GlucoMeter.toString()
+                else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) Const.UUID_SERVICE_DATA_Oximeter.toString()
+                else Const.UUID_SERVICE_DATA_Thermometer.toString(),if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer))
+                    Const.UUID_CHARACTER_RECEIVE_GlucoMeter.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter))
+                        Const.UUID_CHARACTER_RECEIVE_Oximeter.toString() else Const.UUID_CHARACTER_RECEIVE_Thermometer.toString(),
                 object : BleNotifyCallback {
-
-                    override fun onCharacteristicChanged(
-                        data: ByteArray,
-                        device: BleDevice
-                    ) {
-
+                    override fun onCharacteristicChanged( data: ByteArray,device: BleDevice) {
                         if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) {
                             mDataParser!!.start()
                             if (data.size == 10) {
@@ -168,7 +169,8 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 //                                    Log.d("MybLe", "hex: ${data.toHex()}")
 //                                    Log.d("MybLe", "Intent3: ${String(data)}")
                             }
-                        } else {
+                        }else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
+
                             Log.e("MybLe1", "add: " + Arrays.toString(data))
                             for (datalog in data) {
                                 val hi = datalog
@@ -182,6 +184,20 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                             }
                             mDataParser!!.start()
                             mDataParser!!.add(data, Const.Thermometer)
+                        } else {
+                            Log.e("MybLe1", "add: " + Arrays.toString(data))
+                            for (datalog in data) {
+                                val hi = datalog
+                                val hinumber = hi.toInt()
+                                val hinumberunsignedHex = String.format("%02X", hinumber and 0xff)
+                                val lownumberdecimal: Int = hinumberunsignedHex.toInt(16)
+                                Log.e(
+                                    "MybLe  current",
+                                    hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString()
+                                )
+                            }
+                            mDataParser!!.start()
+                            mDataParser!!.add(data, Const.ECG)
 
                         }
                     }
@@ -242,7 +258,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         scanResults[indexQuery] = result
                         deviceSearchAdapter?.notifyItemChanged(indexQuery)
                     } else {
-                        if ((viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)&&result.device.name!=null&&result.device.name.contains(Const.Thermometer))||!viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
+                        if ((viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer) && result.device.name!=null && result.device.name.contains(Const.Thermometer)) || !viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
 
                             scanResults.add(result)
                             scanResults.sortByDescending { it.rssi }
@@ -283,6 +299,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     }
 
     override fun setupUI() {
+        ecgConnectivity()
         setupTitle(getString(R.string.searchdetails))
         setupBackButtonEnable(true, true)
         val arg = arguments?.getString("pname")
@@ -306,7 +323,8 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         viewDataBinding?.btnSend?.setOnClickListener {
             if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter) ||
                 viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer) ||
-                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)
+                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)||
+                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)
             ) {
                 checkPermissions()
             } else {
@@ -324,6 +342,9 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 stopScan()
                 bleManager.disconnectAll()
             }
+        }
+        viewDataBinding?.newData?.setOnClickListener {
+             contecSdk!!.getData(communicateCallback)
         }
         viewDataBinding?.btnReport?.setOnClickListener {
             if (isConnected) {
@@ -366,17 +387,30 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         viewDataBinding?.wfvPleth?.reset()
                     }
 //                    mBleControl!!.connect(scanResults.get(position).device)
-                    bleManager = BleManager.getInstance().init(context)
-                    bleManager.connect(
-                        scanResults.get(position).device.address,
-                        bleConnectCallback
-                    );
+                    if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
+                        isListen = false
+                        contecSdk!!.defineBTPrefix(DeviceType.PM10, "EMAY")
+                        contecSdk!!.connect(scanResults.get(position).device, mConnectCallback)
+                    }else{
+                        bleManager = BleManager.getInstance().init(context)
+                        bleManager.connect(
+                            scanResults.get(position).device.address,
+                            bleConnectCallback
+                        );
+                    }
 
 
                 } else {
 //                    viewDataBinding?.wfvPleth?.reset()
 //                    mBleControl!!.disconnect()
-                    bleManager.disconnect(scanResults.get(position).device.address)
+                    if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
+
+                        if (isConnected) {
+                            contecSdk?.disconnect()
+                        }
+                    }else {
+                        bleManager.disconnect(scanResults.get(position).device.address)
+                    }
                 }
 
 //                m_myUUID = UUID.fromString(scanResults.get(position).scanRecord?.serviceUuids?.get(0).toString())
@@ -384,6 +418,8 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 //                context?.let { ConnectToDevice(it).execute() }
             }
         })
+
+
 
         mDataParser = DataParser(object : DataParser.onPackageReceivedListener {
 
@@ -602,16 +638,28 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 
             stopScan()
             if (isConnected) {
+                if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
 
+                    if (isConnected) {
+                        contecSdk?.disconnect()
+                    }
+                }else
                 if (bleManager.connectedDevices.size > 0) {
                     bleManager.disconnectAll()
                 }
             }
         } else {
             //start scan with specified scanOptions
-            if (isConnected) {
-                if (bleManager.connectedDevices.size > 0) {
-                    bleManager.disconnectAll()
+            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
+
+                if (isConnected) {
+                    contecSdk?.disconnect()
+                }
+            }else{
+                if (isConnected) {
+                    if (bleManager.connectedDevices.size > 0) {
+                        bleManager.disconnectAll()
+                    }
                 }
             }
             var filters: List<ScanFilter>? = null
@@ -638,7 +686,10 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             }
             scanResults.clear()
             deviceSearchAdapter?.setData(scanResults)
-            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
+            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
+
+                contecSdk?.startBluetoothSearch(searchCallback, 20000)
+            } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
 
                 bleScanner.startScan(null, scanSettings, scanCallback)
             } else {
@@ -653,11 +704,16 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 
     @SuppressLint("MissingPermission")
     private fun stopScan() {
+        if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
 
-        Log.d("TAG", "scanResults: $scanResults")
-        bleScanner.stopScan(scanCallback)
-        isScanning = false
+            contecSdk?.stopBluetoothSearch()
 
+            isScanning = false
+        }else {
+            Log.d("TAG", "scanResults: $scanResults")
+            bleScanner.stopScan(scanCallback)
+            isScanning = false
+        }
 //        }
     }
     //endregion
@@ -812,5 +868,344 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         return byteArray
     }
 
+
+    fun ecgConnectivity(){
+        contecSdk = ContecSdk(context)
+        contecSdk!!.init(false)
+    }
+    private val mConnectCallback = object : ConnectCallback {
+       override fun onConnectStatus(status: Int) {
+            activity!!.runOnUiThread(java.lang.Runnable {
+
+
+                if (status == SdkConstants.CONNECT_CONNECTED) {
+                    Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(context, "connection succeeded", Toast.LENGTH_SHORT)
+//                        .show()
+                    Log.e("\"MYBLE\"", "connection succeeded")
+                    if (contecSdk != null) {
+                        Log.e("MYBLE", "status = $status")
+                        isConnected = true
+//                Log.d("MybLe", "Intent: ${status}")
+                        viewDataBinding?.btnRetry?.visibility = View.VISIBLE
+                        viewDataBinding?.btnReport?.visibility = View.VISIBLE
+                        viewDataBinding?.btnSend?.text = "Disconnect"
+
+//                        contecSdk!!.setTransSpeed(DeviceParameter.TransSpeed.FAST) //Set transfer rate
+//
+//                        contecSdk!!.setDataType(DeviceParameter.DataType.UPLOAD) //Set acquisition data type
+//
+//                        contecSdk!!.getData(communicateCallback)
+                    }
+                } else if (status == SdkConstants.CONNECT_DISCONNECTED || status == SdkConstants.CONNECT_DISCONNECT_SERVICE_UNFOUND || status == SdkConstants.CONNECT_DISCONNECT_NOTIFY_FAIL || status == SdkConstants.CONNECT_DISCONNECT_EXCEPTION) {
+                    Toast.makeText(context, "Device is disconnected", Toast.LENGTH_SHORT)
+                        .show()
+                    Log.e("\"MYBLE\"", "Connection failed")
+                }
+            })
+        }
+
+        override fun onOpenStatus(p0: Int) {
+            activity!!.runOnUiThread(java.lang.Runnable {
+//                tvStatus.setText("status = $status")
+                if (p0 == SdkConstants.OPEN_SUCCESS) {
+                    Toast.makeText(
+                        context,
+                        "Device turned on successfully",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    Log.e("MYBLE", "Device turned on successfully")
+                } else {
+                    Toast.makeText(context, "Device failed to open", Toast.LENGTH_SHORT)
+                        .show()
+                    Log.e("MYBLE", "Device failed to open")
+                }
+            })
+        }
+    }
+
+    /**
+     * 获取数据回调
+     */
+    var communicateCallback: CommunicateCallback = object : CommunicateCallback {
+        /**
+         * 获取数据失败
+         * @param errorCode
+         */
+        override fun onFail(errorCode: Int) {
+            activity!!.runOnUiThread(java.lang.Runnable {
+                if (contecSdk != null) {
+                    Log.e("MYBLE", "Get data timed out"+errorCode)
+                    contecSdk!!.disconnect()
+
+                isConnected = false
+                viewDataBinding?.btnRetry?.visibility = View.GONE
+                viewDataBinding?.btnReport?.visibility = View.GONE
+                viewDataBinding?.btnSend?.text = "Search Device"
+//                Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
+                }
+            })
+        }
+
+        /**
+         * 设备中没有未上传数据
+         */
+        override fun onDataEmpty() {
+            activity!!.runOnUiThread(java.lang.Runnable {
+//                tvGetData.setText("There is no unuploaded data in the device")
+                if (isListen) {
+                    if (null != contecSdk) {
+                        contecSdk!!.listenRemoteDevice(scanResults[0].device, listenRemoteDeviceCallback)
+                    }
+                }
+            })
+        }
+
+        /**
+         * 按段返回心电数据
+         * @param ecgData
+         */
+        override fun onData(ecgData: EcgData) {
+            activity!!.runOnUiThread(java.lang.Runnable {
+                ecgDataArrayList.add(ecgData)
+                val stringBuffer = StringBuffer()
+                Log.e(TAG, "currentCount = " + ecgData.currentCount)
+                Log.e(TAG, "size = " + ecgData.size)
+                Log.e(TAG, "pr = " + ecgData.pr)
+                for (i in ecgData.chineseResult.indices) {
+                    Log.e(TAG, "re = " + ecgData.chineseResult[i])
+                    Log.e(TAG, "in = " + ecgData.indexResult[i])
+                }
+                stringBuffer.append(
+                    """
+                    uploadCount = ${ecgData.uploadCount}
+                    
+                    """.trimIndent()
+                )
+                stringBuffer.append(
+                    """
+                    currentCount = ${ecgData.currentCount}
+                    
+                    """.trimIndent()
+                )
+                stringBuffer.append(
+                    """
+                    size = ${ecgData.size}
+                    
+                    """.trimIndent()
+                )
+                stringBuffer.append(
+                    """
+                    pr = ${ecgData.pr}
+                    
+                    """.trimIndent()
+                )
+                val date: String =
+                  convertFormat(ecgData.year) + "-" + convertFormat(
+                        ecgData.month
+                    ) +
+                            "-" + convertFormat(
+                        ecgData.day
+                    ) + " " + convertFormat(
+                        ecgData.hour
+                    ) +
+                            ":" + convertFormat(
+                        ecgData.min
+                    ) + ":" + convertFormat(
+                        ecgData.sec
+                    )
+                stringBuffer.append("date = $date\n")
+                for (i in ecgData.chineseResult.indices) {
+                    stringBuffer.append("Chresult = " + ecgData.chineseResult[i] + "   ")
+                }
+                stringBuffer.append("\n")
+                for (i in ecgData.englishResult.indices) {
+                    stringBuffer.append("Enresult = " + ecgData.englishResult[i] + "   ")
+                }
+                stringBuffer.append("\n")
+                Log.e("Result", "onData: "+stringBuffer )
+            })
+        }
+
+        /**
+         * Progress callback for each item
+         * @param uploadCount
+         * @param currentCount
+         * @param progress
+         */
+        override fun onProgress(uploadCount: Int, currentCount: Int, progress: Int) {
+            activity!!.runOnUiThread(java.lang.Runnable {
+              Log.e(TAG, "uploadCount = " + uploadCount + "   currentCount = " +
+                          currentCount + "   progress = " + progress);
+//                tvGetData.setText("current progress = $progress")
+            })
+        }
+
+        /**
+         * data received
+         */
+        override fun onDataComplete() {
+            activity!!.runOnUiThread(java.lang.Runnable {
+                Log.e("MYLBL", "data received")
+//                btnEcgWave.setEnabled(true)
+//                contecSdk!!.disconnect()
+                contecSdk!!.deleteData(DeviceParameter.DataType.ALL,0,deleteDataCallback)
+                if (isListen) {
+                    if (null != contecSdk) {
+                        contecSdk!!.listenRemoteDevice(scanResults[0].device, listenRemoteDeviceCallback)
+                    }
+                }
+            })
+        }
+
+        /**
+         * After the data is received, the data is deleted successfully
+         */
+        override fun onDeleteSuccess() {
+            requireActivity().runOnUiThread(java.lang.Runnable {
+                Log.e(
+                    "MYLBL",
+                    "After the data is received, the data is deleted successfully"
+                )
+            })
+        }
+
+        /**
+         * After receiving the data，Failed to delete data
+         */
+        override fun onDeleteFail() {
+            requireActivity().runOnUiThread(java.lang.Runnable {
+                Log.e(
+                    "MYLBL",
+                    "After receiving the data，Failed to delete data"
+                )
+            })
+        }
+    }
+
+    var  deleteDataCallback : DeleteDataCallback = object : DeleteDataCallback {
+        override fun onFail(p0: Int) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onSuccess() {
+            TODO("Not yet implemented")
+        }
+
+    }
+    /**
+     * 监听状态回调
+     */
+    var listenRemoteDeviceCallback =
+        ListenRemoteDeviceCallback { listenStatus ->
+            requireActivity().runOnUiThread(java.lang.Runnable {
+//                tvListenStatus.setText("listenStatus = $listenStatus")
+                if (listenStatus == SdkConstants.LISTEN_SUCCESS) {
+                    if (contecSdk != null) {
+                        contecSdk!!.getData(communicateCallback)
+                    }
+                }
+            })
+        }
+    fun convertFormat(num: Int): String? {
+        return if (num < 10) {
+            "0$num"
+        } else {
+            "" + num
+        }
+    }
+    var searchCallback: BluetoothSearchCallback = object : BluetoothSearchCallback {
+        @SuppressLint("MissingPermission")
+        override fun onScanResult(result: ScanResult) {
+            activity!!.runOnUiThread(java.lang.Runnable {
+                val device = result.device
+                if(device.name.contains("PM10")){
+                val record = result.scanRecord!!.bytes
+
+                Log.e(TAG, "BYTE = " + Utils.bytesToHexString(record))
+                var manufactorSpecificString: String? = ""
+                if (record != null) {
+                    val manufactorSpecificBytes: ByteArray? = getManufacturerSpecificData(record)
+                    if (manufactorSpecificBytes != null) {
+                        manufactorSpecificString = String(manufactorSpecificBytes)
+                    }
+                }
+                Log.e(TAG, device.name)
+                Log.e(TAG, String(record!!))
+                Log.e(TAG, manufactorSpecificString!!)
+                val stringBuffer = StringBuffer()
+                if (device.type == BluetoothDevice.DEVICE_TYPE_CLASSIC) {
+                    stringBuffer.append(device.name + "(classic)" + "bluetooth" + "\n")
+                } else if (device.type == BluetoothDevice.DEVICE_TYPE_DUAL) {
+                    stringBuffer.append(device.name + "(dual)" + "bluetooth" + "\n")
+                } else if (device.type == BluetoothDevice.DEVICE_TYPE_LE) {
+                    stringBuffer.append(device.name + "(ble)" + "bluetooth" + "\n")
+                }
+                if (manufactorSpecificString != null) {
+                    if (manufactorSpecificString.contains("DT") && manufactorSpecificString.contains(
+                            "DATA"
+                        )
+                    ) {
+                        val index = manufactorSpecificString.indexOf("DT")
+                        val date = manufactorSpecificString.substring(index + 2, index + 8)
+                        stringBuffer.append(
+                            manufactorSpecificString + "\n"
+                                    + "有数据, " + "当前时间为" + date
+                        )
+                    } else if (manufactorSpecificString.contains("DT")) {
+                        val index = manufactorSpecificString.indexOf("DT")
+                        val date = manufactorSpecificString.substring(index + 2, index + 8)
+                        stringBuffer.append(
+                            manufactorSpecificString + "\n"
+                                    + "没有数据, " + "当前时间为" + date
+                        )
+                    } else if (manufactorSpecificString.contains("DATA")) {
+                        stringBuffer.append(
+                            (manufactorSpecificString + "\n"
+                                    + "有数据，没有时间")
+                        )
+                    }
+                }
+                if (result != null) {
+
+                    val indexQuery =
+                        scanResults.indexOfFirst { it.device.address == result.device.address }
+                    if (indexQuery != -1) {
+                        scanResults[indexQuery] = result
+                        deviceSearchAdapter?.notifyItemChanged(indexQuery)
+                    } else {
+                        if ((viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer) && result.device.name!=null && result.device.name.contains(Const.Thermometer)) || !viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
+
+                            scanResults.add(result)
+                            scanResults.sortByDescending { it.rssi }
+                            val predicate = Predicate { x: ScanResult -> x.device.name == null }
+                            removeItems(scanResults, predicate)
+                        }
+                    }
+                }
+                }}
+                //                    LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getApplicationContext());
+                //                    deviceSearchAdapter = new DeviceSearchAdapter(getApplicationContext(), searchDeviceList);
+                //
+                //                    recyclerView.setLayoutManager(linearLayoutManager);
+                //                    recyclerView.setAdapter(deviceSearchAdapter);
+            )
+
+        }
+
+        override fun onScanError(errorCode: Int) {
+            activity!!.runOnUiThread(java.lang.Runnable {
+                if (errorCode == SdkConstants.SCAN_FAIL_BT_UNSUPPORT) {
+                    Log.e(TAG, "this no bluetooth")
+                } else if (errorCode == SdkConstants.SCAN_FAIL_BT_DISABLE) {
+                    Log.e(TAG, "bluetooth not enable")
+                }
+            })
+        }
+
+        override fun onScanComplete() {
+            activity!!.runOnUiThread(java.lang.Runnable { Log.e(TAG, "search complete") })
+        }
+    }
 
 }

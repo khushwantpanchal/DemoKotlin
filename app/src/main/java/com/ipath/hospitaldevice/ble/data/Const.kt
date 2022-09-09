@@ -18,7 +18,8 @@ object Const {
 
     val Thermometer="Thermometer"
     val Glucometer="Const.Glucometer"
-    val Oximeter="Const.Oximeter"
+    val Oximeter="Oximeter"
+    val ECG="ECG"
     val UUID_CHARACTER_RECEIVE_GlucoMeter2 = UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb")
 
     val UUID_MODIFY_BT_NAME = UUID.fromString("CDEACB81-5235-4C07-8846-93A37EE6B86D")

@@ -135,6 +135,20 @@
                     android:layout_height="wrap_content"
                     app:layout_constraintTop_toBottomOf="@+id/tvTitle"
                     />
+                <Button
+                    android:id="@+id/newData"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginVertical="@dimen/_10sdp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/deviceList"
+                    android:layout_marginTop="@dimen/_10mdp"
+
+                    android:background="@drawable/centre_button"
+                    android:text="New Data"
+                    android:textColor="@color/white" />
                 <TextView
                     android:id="@+id/tvTitle"
                     android:layout_width="match_parent"
