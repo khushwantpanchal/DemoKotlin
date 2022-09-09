@@ -19,7 +19,7 @@
         <item>Select Report</item>
         <item >Oximeter</item>
         <item>Glucometer</item>
-        <item >Thermometer</item>
+       <!-- <item >Thermometer</item>-->
 <!--        <item >ECG</item>-->
 <!--        <item >Blood Pressure</item>-->
 <!--        <item >Medicine Pill Box</item>-->
