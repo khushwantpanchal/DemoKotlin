@@ -20,7 +20,7 @@ object Const {
     val UUID_CHARACTER_RECEIVE_MedicinePillBox = UUID.fromString("2F2DFFF4-2E85-649D-3545-3586428F5DA3")
 
     val Thermometer="Thermometer"
-    val Glucometer="Const.Glucometer"
+    val Glucometer="Glucometer"
     val Oximeter="Oximeter"
     val ECG="ECG"
     val MedicinePillBox="Medicine Pill Box"

@@ -96,7 +96,7 @@ class DataParser     //Constructor
 
                         if (firstnumber == 1) {
                             var Celcius = temrature.toDouble() / 10
-                            var Fahrenheit = (Celcius * (9 / 5)) + 32
+                            var Fahrenheit = (Celcius * 1.8) + 32;
                             if (temrature > 0) {
                                 mOxiParams.update(
                                     0,
@@ -110,7 +110,7 @@ class DataParser     //Constructor
                             }
                         } else {
                             var Fahrenheit: Double = temrature.toDouble() / 10
-                            var Celcius = ((Fahrenheit - 32) * 5) / 9
+                            var Celcius = (Fahrenheit - 32) / 1.8
                             if (temrature > 0) {
                                 mOxiParams.update(
                                     0,
