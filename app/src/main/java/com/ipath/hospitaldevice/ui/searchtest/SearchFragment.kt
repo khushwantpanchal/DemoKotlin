@@ -143,9 +143,10 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             bleManager.notify(device,
                 if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer))Const.UUID_SERVICE_DATA_GlucoMeter.toString()
                 else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) Const.UUID_SERVICE_DATA_Oximeter.toString()
-                else Const.UUID_SERVICE_DATA_Thermometer.toString(),if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer))
+                else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) Const.UUID_SERVICE_DATA_Thermometer.toString()
+                else Const.UUID_SERVICE_DATA_MedicinePillBox.toString(),if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer))
                     Const.UUID_CHARACTER_RECEIVE_GlucoMeter.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter))
-                        Const.UUID_CHARACTER_RECEIVE_Oximeter.toString() else Const.UUID_CHARACTER_RECEIVE_Thermometer.toString(),
+                        Const.UUID_CHARACTER_RECEIVE_Oximeter.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) Const.UUID_CHARACTER_RECEIVE_Thermometer.toString() else Const.UUID_CHARACTER_RECEIVE_MedicinePillBox.toString(),
                 object : BleNotifyCallback {
                     override fun onCharacteristicChanged( data: ByteArray,device: BleDevice) {
                         if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) {
@@ -181,10 +182,19 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                                 val hinumber = hi.toInt()
                                 val hinumberunsignedHex = String.format("%02X", hinumber and 0xff)
                                 val lownumberdecimal: Int = hinumberunsignedHex.toInt(16)
-                                Log.e(
-                                    "MybLe  current",
-                                    hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString()
-                                )
+                                Log.e("MybLe  current",hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString())
+                            }
+                            mDataParser!!.start()
+                            mDataParser!!.add(data, Const.Thermometer)
+                        } else  if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox)) {
+
+                            Log.e("MybLe1", "add: " + Arrays.toString(data))
+                            for (datalog in data) {
+                                val hi = datalog
+                                val hinumber = hi.toInt()
+                                val hinumberunsignedHex = String.format("%02X", hinumber and 0xff)
+                                val lownumberdecimal: Int = hinumberunsignedHex.toInt(16)
+                                Log.e("MybLe  current",hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString())
                             }
                             mDataParser!!.start()
                             mDataParser!!.add(data, Const.Thermometer)
@@ -195,10 +205,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                                 val hinumber = hi.toInt()
                                 val hinumberunsignedHex = String.format("%02X", hinumber and 0xff)
                                 val lownumberdecimal: Int = hinumberunsignedHex.toInt(16)
-                                Log.e(
-                                    "MybLe  current",
-                                    hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString()
-                                )
+                                Log.e("MybLe  current",hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString())
                             }
                             mDataParser!!.start()
                             mDataParser!!.add(data, Const.ECG)
@@ -328,7 +335,8 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter) ||
                 viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer) ||
                 viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)||
-                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)
+                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)||
+                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox)
             ) {
                 checkPermissions()
             } else {
@@ -359,7 +367,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             if (isConnected) {
                 stopScan()
                 if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
-
+                    contecSdk!!.disconnect()
                 }else{
                     bleManager.disconnectAll()
 
@@ -495,7 +503,24 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         viewDataBinding?.tvStatus?.setText(
                             ECGDataREcord
                         )
-                    } else {
+                    }else if (viewDataBinding?.deviceList?.selectedItem.toString()
+                            .equals(Const.MedicinePillBox)
+                    ) {
+
+
+                        Celcius = params!!.Celcius.toString()
+                        val solutionCelcius: Double =
+                            String.format("%.1f", Celcius.toDouble()).toDouble()
+                        Celcius = solutionCelcius.toString()
+                        Fahrenheit = params!!.Fahrenheit.toString()
+                        val solutionFahrenheit: Double =
+                            String.format("%.1f", Fahrenheit.toDouble()).toDouble()
+                        Fahrenheit = solutionFahrenheit.toString()
+                        viewDataBinding?.tvStatus?.setText(
+                            (Celcius)
+                                .toString() + " °C" + "  " + (Fahrenheit).toString() + " °F"
+                        )
+                    }   else {
 
                     }
                 }
@@ -710,12 +735,21 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         .setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_Thermometer)).build()
                 )
             }
+            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox)) {
+                filters.add(
+                    ScanFilter.Builder()
+                        .setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_MedicinePillBox)).build()
+                )
+            }
             scanResults.clear()
             deviceSearchAdapter?.setData(scanResults)
             if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
 
                 contecSdk?.startBluetoothSearch(searchCallback, 20000)
             } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
+
+                bleScanner.startScan(null, scanSettings, scanCallback)
+            }  else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox)) {
 
                 bleScanner.startScan(null, scanSettings, scanCallback)
             } else {

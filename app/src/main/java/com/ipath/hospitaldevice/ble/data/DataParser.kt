@@ -138,6 +138,20 @@ class DataParser     //Constructor
                         )
                         mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         DataUpdated=false
+                    }else if (type.equals(Const.MedicinePillBox)) {
+
+//                        Log.e("MybLe", hexString.toString())
+
+                        mOxiParams.update(
+                            0,
+                            0,
+                            0,
+                            0,
+                            0.0,
+                            0.0,ecgData
+                        )
+                        mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
+                        DataUpdated=false
                     }
                 }
             }
