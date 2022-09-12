@@ -15,6 +15,7 @@ class DataParser     //Constructor
 
     //Buffer queue
     private var bufferQueue = ByteArray(10)
+    private var ecgData :String=""
     private var type: String = ""
 
     //Parse Runnable
@@ -58,7 +59,7 @@ class DataParser     //Constructor
                         val pulseRate = dat[6]
                         val pi = dat[8] / 10
                         if (spo2 >= 35 && spo2 <= 100 && pulseRate <= 220) {
-                            mOxiParams.update(spo2.toInt(), pulseRate.toInt(), pi, 0, 0.0, 0.0)
+                            mOxiParams.update(spo2.toInt(), pulseRate.toInt(), pi, 0, 0.0, 0.0,"")
                             mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         }
                         DataUpdated=false
@@ -75,7 +76,7 @@ class DataParser     //Constructor
                         Log.e("MybLe", lownumberdecimal.toString())
                         val glucoseMeasurement = lownumberdecimal + hinumberdecimal;
                         if (glucoseMeasurement > 0) {
-                            mOxiParams.update(0, 0, 0, glucoseMeasurement, 0.0, 0.0)
+                            mOxiParams.update(0, 0, 0, glucoseMeasurement, 0.0, 0.0,"")
                             mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         }
                         DataUpdated=false
@@ -103,7 +104,7 @@ class DataParser     //Constructor
                                     0,
                                     0,
                                     Celcius.toDouble(),
-                                    Fahrenheit.toDouble()
+                                    Fahrenheit.toDouble(),""
                                 )
                                 mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                             }
@@ -117,11 +118,25 @@ class DataParser     //Constructor
                                     0,
                                     0,
                                     Celcius.toDouble(),
-                                    Fahrenheit.toDouble()
+                                    Fahrenheit.toDouble(),""
                                 )
                                 mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                             }
                         }
+                        DataUpdated=false
+                    }else if (type.equals(Const.ECG)) {
+
+//                        Log.e("MybLe", hexString.toString())
+
+                        mOxiParams.update(
+                            0,
+                            0,
+                            0,
+                            0,
+                            0.0,
+                            0.0,ecgData
+                        )
+                        mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         DataUpdated=false
                     }
                 }
@@ -143,6 +158,20 @@ class DataParser     //Constructor
         }
 
         Log.e(TAG, "add: " + Arrays.toString(dat))
+
+        //Log.i(TAG, "add: "+ bufferQueue.size());
+    }
+
+    fun addECG(dat: String, type: String) {
+        try {
+            ecgData = dat
+            this.type = type
+            DataUpdated=true
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
+
+        Log.e(TAG, "add: " + dat)
 
         //Log.i(TAG, "add: "+ bufferQueue.size());
     }
@@ -189,14 +218,18 @@ class DataParser     //Constructor
         var Fahrenheit //perfusion index
                 = 0.0
             private set
+        var ecgData //perfusion index
+                = ""
+            private set
 
-        fun update(spo2: Int, pulseRate: Int, pi: Int, mmolLvalue: Int, Celcius: Double, Fahrenheit: Double) {
+        fun update(spo2: Int, pulseRate: Int, pi: Int, mmolLvalue: Int, Celcius: Double, Fahrenheit: Double,ecgData:String) {
             this.spo2 = spo2
             this.pulseRate = pulseRate
             this.pi = pi
             this.mmolLvalue = mmolLvalue
             this.Celcius = Celcius
             this.Fahrenheit = Fahrenheit
+            this.ecgData = ecgData
         }
     }
 }

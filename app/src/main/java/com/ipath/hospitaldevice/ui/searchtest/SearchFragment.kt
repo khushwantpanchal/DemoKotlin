@@ -82,6 +82,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     var GluecosedLmmolLvalue = "";
     var Celcius = "";
     var Fahrenheit = "";
+    var ECGDataREcord = "";
 
     private var mDataParser: DataParser? = null
     private var mBleControl: BleController? = null
@@ -339,8 +340,13 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 //            bundle.putString("mobile", mobile)
 //            findNavController().navigate(R.id.action_patientFragment, bundle);
             if (isConnected) {
+
                 stopScan()
-                bleManager.disconnectAll()
+                if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
+                    contecSdk!!.disconnect()
+                }else {
+                    bleManager.disconnectAll()
+                }
             }
         }
         viewDataBinding?.newData?.setOnClickListener {
@@ -349,7 +355,12 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         viewDataBinding?.btnReport?.setOnClickListener {
             if (isConnected) {
                 stopScan()
-                bleManager.disconnectAll()
+                if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
+
+                    contecSdk!!.disconnect()
+                }else{
+                    bleManager.disconnectAll()
+                }
             }
             val bundle = Bundle()
             bundle.putString("pname", arg)
@@ -361,6 +372,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             bundle.putString("GluecosedLmmolLvalue", GluecosedLmmolLvalue)
             bundle.putString("Celcius", Celcius)
             bundle.putString("Fahrenheit", Fahrenheit)
+            bundle.putString("ECGDataREcord", ECGDataREcord)
             findNavController().navigate(R.id.action_patientFragment_to_reportFragment, bundle);
         }
 //        recyclerClear.setOnClickListener {
@@ -468,6 +480,16 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         viewDataBinding?.tvStatus?.setText(
                             (Celcius)
                                 .toString() + " °C" + "  " + (Fahrenheit).toString() + " °F"
+                        )
+                    }  else if (viewDataBinding?.deviceList?.selectedItem.toString()
+                            .equals(Const.ECG)
+                    ) {
+
+
+
+                        ECGDataREcord = params?.ecgData.toString()
+                        viewDataBinding?.tvStatus?.setText(
+                            ECGDataREcord
                         )
                     } else {
 
@@ -891,16 +913,22 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         viewDataBinding?.btnReport?.visibility = View.VISIBLE
                         viewDataBinding?.btnSend?.text = "Disconnect"
 
-//                        contecSdk!!.setTransSpeed(DeviceParameter.TransSpeed.FAST) //Set transfer rate
+                        contecSdk!!.setTransSpeed(DeviceParameter.TransSpeed.FAST) //Set transfer rate
 //
-//                        contecSdk!!.setDataType(DeviceParameter.DataType.UPLOAD) //Set acquisition data type
+                        contecSdk!!.setDataType(DeviceParameter.DataType.ALL) //Set acquisition data type
 //
-//                        contecSdk!!.getData(communicateCallback)
+                        contecSdk!!.getData(communicateCallback)
                     }
                 } else if (status == SdkConstants.CONNECT_DISCONNECTED || status == SdkConstants.CONNECT_DISCONNECT_SERVICE_UNFOUND || status == SdkConstants.CONNECT_DISCONNECT_NOTIFY_FAIL || status == SdkConstants.CONNECT_DISCONNECT_EXCEPTION) {
                     Toast.makeText(context, "Device is disconnected", Toast.LENGTH_SHORT)
                         .show()
                     Log.e("\"MYBLE\"", "Connection failed")
+                    isConnected = false
+                    viewDataBinding?.btnRetry?.visibility = View.GONE
+                    viewDataBinding?.btnReport?.visibility = View.GONE
+                    viewDataBinding?.tvStatus?.text = ""
+                    viewDataBinding?.tvParams?.text = ""
+                    viewDataBinding?.btnSend?.setText("Search")
                 }
             })
         }
@@ -968,62 +996,67 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         override fun onData(ecgData: EcgData) {
             activity!!.runOnUiThread(java.lang.Runnable {
                 ecgDataArrayList.add(ecgData)
-                val stringBuffer = StringBuffer()
-                Log.e(TAG, "currentCount = " + ecgData.currentCount)
-                Log.e(TAG, "size = " + ecgData.size)
-                Log.e(TAG, "pr = " + ecgData.pr)
-                for (i in ecgData.chineseResult.indices) {
-                    Log.e(TAG, "re = " + ecgData.chineseResult[i])
-                    Log.e(TAG, "in = " + ecgData.indexResult[i])
-                }
-                stringBuffer.append(
-                    """
-                    uploadCount = ${ecgData.uploadCount}
-                    
-                    """.trimIndent()
-                )
-                stringBuffer.append(
-                    """
-                    currentCount = ${ecgData.currentCount}
-                    
-                    """.trimIndent()
-                )
-                stringBuffer.append(
-                    """
+                if(ecgDataArrayList.size==1) {
+                    val stringBuffer = StringBuffer()
+                    Log.e(TAG, "currentCount = " + ecgData.currentCount)
+                    Log.e(TAG, "size = " + ecgData.size)
+                    Log.e(TAG, "pr = " + ecgData.pr)
+                    for (i in ecgData.chineseResult.indices) {
+                        Log.e(TAG, "re = " + ecgData.chineseResult[i])
+                        Log.e(TAG, "in = " + ecgData.indexResult[i])
+                    }
+//                    stringBuffer.append(
+//                        """
+//                    uploadCount = ${ecgData.uploadCount}
+//
+//                    """.trimIndent()
+//                    )
+//                    stringBuffer.append(
+//                        """
+//                    currentCount = ${ecgData.currentCount}
+//
+//                    """.trimIndent()
+//                    )
+                    stringBuffer.append(
+                        """
                     size = ${ecgData.size}
                     
                     """.trimIndent()
-                )
-                stringBuffer.append(
-                    """
+                    )
+                    stringBuffer.append(
+                        """
                     pr = ${ecgData.pr}
                     
                     """.trimIndent()
-                )
-                val date: String =
-                  convertFormat(ecgData.year) + "-" + convertFormat(
-                        ecgData.month
-                    ) +
-                            "-" + convertFormat(
-                        ecgData.day
-                    ) + " " + convertFormat(
-                        ecgData.hour
-                    ) +
-                            ":" + convertFormat(
-                        ecgData.min
-                    ) + ":" + convertFormat(
-                        ecgData.sec
                     )
-                stringBuffer.append("date = $date\n")
-                for (i in ecgData.chineseResult.indices) {
-                    stringBuffer.append("Chresult = " + ecgData.chineseResult[i] + "   ")
+                    val date: String =
+                        convertFormat(ecgData.year) + "-" + convertFormat(
+                            ecgData.month
+                        ) +
+                                "-" + convertFormat(
+                            ecgData.day
+                        ) + " " + convertFormat(
+                            ecgData.hour
+                        ) +
+                                ":" + convertFormat(
+                            ecgData.min
+                        ) + ":" + convertFormat(
+                            ecgData.sec
+                        )
+                    stringBuffer.append("date = $date\n")
+//                    for (i in ecgData.chineseResult.indices) {
+//                        stringBuffer.append("Chresult = " + ecgData.englishResult[i] + "   ")
+//                    }
+//                    stringBuffer.append("\n")
+                    for (i in ecgData.englishResult.indices) {
+                        stringBuffer.append("Enresult = " + ecgData.englishResult[i] + "   ")
+                    }
+                    stringBuffer.append("\n")
+                    Log.e("Result", "onData: " + stringBuffer)
+                    mDataParser!!.start()
+                    mDataParser!!.addECG(stringBuffer.toString(), Const.ECG)
+
                 }
-                stringBuffer.append("\n")
-                for (i in ecgData.englishResult.indices) {
-                    stringBuffer.append("Enresult = " + ecgData.englishResult[i] + "   ")
-                }
-                stringBuffer.append("\n")
-                Log.e("Result", "onData: "+stringBuffer )
             })
         }
 
@@ -1049,7 +1082,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 Log.e("MYLBL", "data received")
 //                btnEcgWave.setEnabled(true)
 //                contecSdk!!.disconnect()
-                contecSdk!!.deleteData(DeviceParameter.DataType.ALL,0,deleteDataCallback)
+
                 if (isListen) {
                     if (null != contecSdk) {
                         contecSdk!!.listenRemoteDevice(scanResults[0].device, listenRemoteDeviceCallback)
@@ -1089,7 +1122,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         }
 
         override fun onSuccess() {
-            TODO("Not yet implemented")
+          "Deleted ECG Data Successfully".toast()
         }
 
     }
@@ -1099,7 +1132,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     var listenRemoteDeviceCallback =
         ListenRemoteDeviceCallback { listenStatus ->
             requireActivity().runOnUiThread(java.lang.Runnable {
-//                tvListenStatus.setText("listenStatus = $listenStatus")
+                Log.e("Mylog", "listenStatus = $listenStatus")
                 if (listenStatus == SdkConstants.LISTEN_SUCCESS) {
                     if (contecSdk != null) {
                         contecSdk!!.getData(communicateCallback)

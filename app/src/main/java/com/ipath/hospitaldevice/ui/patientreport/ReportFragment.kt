@@ -110,6 +110,7 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
         val GluecosedLmmolLvalue = arguments?.getString("GluecosedLmmolLvalue")
         val Celcius = arguments?.getString("Celcius")
         val Fahrenheit = arguments?.getString("Fahrenheit")
+        val ECGDataREcord = arguments?.getString("ECGDataREcord")
 
 
         viewDataBinding?.pName?.text = arg
@@ -126,10 +127,15 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
                     .toString() + "   mmol/L: " + (GluecosedLmmolLvalue).toString()
             )
 
+        }else if(!Celcius.isNullOrEmpty()) {
+            viewDataBinding?.pResult?.setText(
+                "mg/dL: " + (GluecosedL)
+                    .toString() + "   mmol/L: " + (GluecosedLmmolLvalue).toString()
+            )
+
         }else{
             viewDataBinding?.pResult?.setText(
-                (Celcius)
-                    .toString() + " °C" + "  " + (Fahrenheit).toString() + " °F"
+                ECGDataREcord
             )
         }
         viewDataBinding?.btnNewTest?.setOnClickListener {

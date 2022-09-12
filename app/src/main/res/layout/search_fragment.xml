@@ -145,7 +145,7 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/deviceList"
                     android:layout_marginTop="@dimen/_10mdp"
-
+android:visibility="gone"
                     android:background="@drawable/centre_button"
                     android:text="New Data"
                     android:textColor="@color/white" />
