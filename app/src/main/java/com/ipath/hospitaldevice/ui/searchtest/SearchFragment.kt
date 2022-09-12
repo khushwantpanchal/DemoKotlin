@@ -83,6 +83,9 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     var Celcius = "";
     var Fahrenheit = "";
     var ECGDataREcord = "";
+    var  arg :String?= "";
+    var mobile:String? = "";
+    var email:String? = "";
 
     private var mDataParser: DataParser? = null
     private var mBleControl: BleController? = null
@@ -303,9 +306,9 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         ecgConnectivity()
         setupTitle(getString(R.string.searchdetails))
         setupBackButtonEnable(true, true)
-        val arg = arguments?.getString("pname")
-        val email = arguments?.getString("email")
-        val mobile = arguments?.getString("mobile")
+         arg = arguments?.getString("pname")
+         email = arguments?.getString("email")
+         mobile = arguments?.getString("mobile")
         viewDataBinding?.pName?.text = arg;
         val adapter = context?.let {
             ArrayAdapter.createFromResource(
@@ -357,23 +360,24 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 stopScan()
                 if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
 
-                    contecSdk!!.disconnect()
                 }else{
                     bleManager.disconnectAll()
+
                 }
+                val bundle = Bundle()
+                bundle.putString("pname", arg)
+                bundle.putString("email", email)
+                bundle.putString("mobile", mobile)
+                bundle.putString("sp02", sp02)
+                bundle.putString("beat", beat)
+                bundle.putString("GluecosedL", GluecosedL)
+                bundle.putString("GluecosedLmmolLvalue", GluecosedLmmolLvalue)
+                bundle.putString("Celcius", Celcius)
+                bundle.putString("Fahrenheit", Fahrenheit)
+                bundle.putString("ECGDataREcord", ECGDataREcord)
+                findNavController().navigate(R.id.action_patientFragment_to_reportFragment, bundle);
             }
-            val bundle = Bundle()
-            bundle.putString("pname", arg)
-            bundle.putString("email", email)
-            bundle.putString("mobile", mobile)
-            bundle.putString("sp02", sp02)
-            bundle.putString("beat", beat)
-            bundle.putString("GluecosedL", GluecosedL)
-            bundle.putString("GluecosedLmmolLvalue", GluecosedLmmolLvalue)
-            bundle.putString("Celcius", Celcius)
-            bundle.putString("Fahrenheit", Fahrenheit)
-            bundle.putString("ECGDataREcord", ECGDataREcord)
-            findNavController().navigate(R.id.action_patientFragment_to_reportFragment, bundle);
+
         }
 //        recyclerClear.setOnClickListener {
 //            if (isScanning) stopScan()
@@ -979,8 +983,10 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
          * 设备中没有未上传数据
          */
         override fun onDataEmpty() {
+
             activity!!.runOnUiThread(java.lang.Runnable {
 //                tvGetData.setText("There is no unuploaded data in the device")
+                "Data not available please take reading".toast()
                 if (isListen) {
                     if (null != contecSdk) {
                         contecSdk!!.listenRemoteDevice(scanResults[0].device, listenRemoteDeviceCallback)
@@ -1082,7 +1088,8 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 Log.e("MYLBL", "data received")
 //                btnEcgWave.setEnabled(true)
 //                contecSdk!!.disconnect()
-
+                contecSdk!!.deleteData(DeviceParameter.DataType.ALL,101,deleteDataCallback)
+                ecgDataArrayList.clear()
                 if (isListen) {
                     if (null != contecSdk) {
                         contecSdk!!.listenRemoteDevice(scanResults[0].device, listenRemoteDeviceCallback)
@@ -1118,11 +1125,14 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 
     var  deleteDataCallback : DeleteDataCallback = object : DeleteDataCallback {
         override fun onFail(p0: Int) {
-            TODO("Not yet implemented")
+//            contecSdk!!.disconnect()
+
         }
 
         override fun onSuccess() {
-          "Deleted ECG Data Successfully".toast()
+
+//            contecSdk!!.disconnect()
+
         }
 
     }
