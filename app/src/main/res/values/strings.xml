@@ -21,8 +21,8 @@
         <item>Glucometer</item>
         <item >Thermometer</item>
         <item >ECG</item>
-<!--        <item >Blood Pressure</item>-->
-        <item >Medicine Pill Box</item>
+        <item >Blood Pressure</item>
+<!--        <item >Medicine Pill Box</item>-->
     </string-array>
     <string name="rationale_title">Permission required</string>
     <string name="rationale_message">we need permission for find your <b>Bluetooth</b> </string>

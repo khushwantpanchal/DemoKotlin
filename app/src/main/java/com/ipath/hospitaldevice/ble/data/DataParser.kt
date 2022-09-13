@@ -59,7 +59,7 @@ class DataParser     //Constructor
                         val pulseRate = dat[6]
                         val pi = dat[8] / 10
                         if (spo2 >= 35 && spo2 <= 100 && pulseRate <= 220) {
-                            mOxiParams.update(spo2.toInt(), pulseRate.toInt(), pi, 0, 0.0, 0.0,"")
+                            mOxiParams.update(spo2.toInt(), pulseRate.toInt(), pi, 0, 0.0, 0.0,"","","","")
                             mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         }
                         DataUpdated=false
@@ -76,7 +76,7 @@ class DataParser     //Constructor
                         Log.e("MybLe", lownumberdecimal.toString())
                         val glucoseMeasurement = lownumberdecimal + hinumberdecimal;
                         if (glucoseMeasurement > 0) {
-                            mOxiParams.update(0, 0, 0, glucoseMeasurement, 0.0, 0.0,"")
+                            mOxiParams.update(0, 0, 0, glucoseMeasurement, 0.0, 0.0,"","","","")
                             mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         }
                         DataUpdated=false
@@ -104,8 +104,7 @@ class DataParser     //Constructor
                                     0,
                                     0,
                                     Celcius.toDouble(),
-                                    Fahrenheit.toDouble(),""
-                                )
+                                    Fahrenheit.toDouble(),"","","","")
                                 mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                             }
                         } else {
@@ -118,8 +117,7 @@ class DataParser     //Constructor
                                     0,
                                     0,
                                     Celcius.toDouble(),
-                                    Fahrenheit.toDouble(),""
-                                )
+                                    Fahrenheit.toDouble(),"","","","")
                                 mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                             }
                         }
@@ -134,8 +132,7 @@ class DataParser     //Constructor
                             0,
                             0,
                             0.0,
-                            0.0,ecgData
-                        )
+                            0.0,ecgData,"","","")
                         mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         DataUpdated=false
                     }else if (type.equals(Const.MedicinePillBox)) {
@@ -148,8 +145,20 @@ class DataParser     //Constructor
                             0,
                             0,
                             0.0,
-                            0.0,ecgData
-                        )
+                            0.0,ecgData,"","","")
+                        mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
+                        DataUpdated=false
+                    }else if (type.equals(Const.BloodPressure)) {
+
+//                        Log.e("MybLe", hexString.toString())
+
+                        mOxiParams.update(
+                            0,
+                            0,
+                            0,
+                            0,
+                            0.0,
+                            0.0,ecgData,dat[3].toString(),dat[4].toString(),dat[5].toString())
                         mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         DataUpdated=false
                     }
@@ -235,8 +244,17 @@ class DataParser     //Constructor
         var ecgData //perfusion index
                 = ""
             private set
+        var mmHgHigh //perfusion index
+                = ""
+            private set
+        var mmHgLow //perfusion index
+                = ""
+            private set
+        var beat //perfusion index
+                = ""
+            private set
 
-        fun update(spo2: Int, pulseRate: Int, pi: Int, mmolLvalue: Int, Celcius: Double, Fahrenheit: Double,ecgData:String) {
+        fun update(spo2: Int, pulseRate: Int, pi: Int, mmolLvalue: Int, Celcius: Double, Fahrenheit: Double,ecgData:String,mmHgHigh:String,mmHgLow:String,beat:String) {
             this.spo2 = spo2
             this.pulseRate = pulseRate
             this.pi = pi
@@ -244,6 +262,9 @@ class DataParser     //Constructor
             this.Celcius = Celcius
             this.Fahrenheit = Fahrenheit
             this.ecgData = ecgData
+            this.mmHgHigh = mmHgHigh
+            this.mmHgLow = mmHgLow
+            this.beat = beat
         }
     }
 }

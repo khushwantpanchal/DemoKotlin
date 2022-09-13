@@ -111,6 +111,9 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
         val Celcius = arguments?.getString("Celcius")
         val Fahrenheit = arguments?.getString("Fahrenheit")
         val ECGDataREcord = arguments?.getString("ECGDataREcord")
+        val mmHgHigh = arguments?.getString("mmHgHigh")
+        val mmHgLow = arguments?.getString("mmHgLow")
+        val beatBp = arguments?.getString("beatBp")
 
 
         viewDataBinding?.pName?.text = arg
@@ -129,8 +132,14 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
 
         }else if(!Celcius.isNullOrEmpty()) {
             viewDataBinding?.pResult?.setText(
-                "mg/dL: " + (GluecosedL)
-                    .toString() + "   mmol/L: " + (GluecosedLmmolLvalue).toString()
+                (Celcius)
+                    .toString() + " °C" + "  " + (Fahrenheit).toString() + " °F"
+            )
+
+        }else if(!mmHgHigh.isNullOrEmpty()) {
+            viewDataBinding?.pResult?.setText(
+                (mmHgHigh)
+                    .toString() + " mmHg" + "  " + (mmHgLow).toString() + " mmHg  "+ (beatBp).toString()+" BPM"
             )
 
         }else{

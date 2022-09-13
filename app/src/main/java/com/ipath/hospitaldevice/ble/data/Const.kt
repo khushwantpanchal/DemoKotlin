@@ -19,11 +19,15 @@ object Const {
     val UUID_SERVICE_DATA_MedicinePillBox = UUID.fromString("2F2DFFF0-2E85-649D-3545-3586428F5DA3")
     val UUID_CHARACTER_RECEIVE_MedicinePillBox = UUID.fromString("2F2DFFF4-2E85-649D-3545-3586428F5DA3")
 
+    val UUID_SERVICE_DATA_BloodPressure = UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb")
+    val UUID_CHARACTER_RECEIVE_BloodPressure = UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb")
+
     val Thermometer="Thermometer"
     val Glucometer="Glucometer"
     val Oximeter="Oximeter"
     val ECG="ECG"
     val MedicinePillBox="Medicine Pill Box"
+    val BloodPressure="Blood Pressure"
     val UUID_CHARACTER_RECEIVE_GlucoMeter2 = UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb")
 
     val UUID_MODIFY_BT_NAME = UUID.fromString("CDEACB81-5235-4C07-8846-93A37EE6B86D")

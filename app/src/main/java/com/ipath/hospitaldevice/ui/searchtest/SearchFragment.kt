@@ -83,6 +83,11 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     var Celcius = "";
     var Fahrenheit = "";
     var ECGDataREcord = "";
+    var mmHgHigh = "";
+    var mmHgLow = "";
+    var beatBp = "";
+
+
     var  arg :String?= "";
     var mobile:String? = "";
     var email:String? = "";
@@ -144,9 +149,9 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer))Const.UUID_SERVICE_DATA_GlucoMeter.toString()
                 else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) Const.UUID_SERVICE_DATA_Oximeter.toString()
                 else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) Const.UUID_SERVICE_DATA_Thermometer.toString()
-                else Const.UUID_SERVICE_DATA_MedicinePillBox.toString(),if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer))
+                else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox)) Const.UUID_SERVICE_DATA_MedicinePillBox.toString()else Const.UUID_SERVICE_DATA_BloodPressure.toString(),if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer))
                     Const.UUID_CHARACTER_RECEIVE_GlucoMeter.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter))
-                        Const.UUID_CHARACTER_RECEIVE_Oximeter.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) Const.UUID_CHARACTER_RECEIVE_Thermometer.toString() else Const.UUID_CHARACTER_RECEIVE_MedicinePillBox.toString(),
+                        Const.UUID_CHARACTER_RECEIVE_Oximeter.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) Const.UUID_CHARACTER_RECEIVE_Thermometer.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox))  Const.UUID_CHARACTER_RECEIVE_MedicinePillBox.toString() else  Const.UUID_CHARACTER_RECEIVE_BloodPressure.toString(),
                 object : BleNotifyCallback {
                     override fun onCharacteristicChanged( data: ByteArray,device: BleDevice) {
                         if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) {
@@ -186,7 +191,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                             }
                             mDataParser!!.start()
                             mDataParser!!.add(data, Const.Thermometer)
-                        } else  if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox)) {
+                        } else  if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const. MedicinePillBox)) {
 
                             Log.e("MybLe1", "add: " + Arrays.toString(data))
                             for (datalog in data) {
@@ -197,7 +202,25 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                                 Log.e("MybLe  current",hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString())
                             }
                             mDataParser!!.start()
-                            mDataParser!!.add(data, Const.Thermometer)
+                            mDataParser!!.add(data, Const.MedicinePillBox)
+                        }  else  if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const. BloodPressure)) {
+                            Log.e("MybLe1", "add: " + Arrays.toString(data))
+                            if (data.size == 8) {
+                                Log.e("MybLe1", "add: " + Arrays.toString(data))
+                                for (datalog in data) {
+                                    val hi = datalog
+                                    val hinumber = hi.toInt()
+                                    val hinumberunsignedHex =
+                                        String.format("%02X", hinumber and 0xff)
+                                    val lownumberdecimal: Int = hinumberunsignedHex.toInt(16)
+                                    Log.e(
+                                        "MybLe  current",
+                                        hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString()
+                                    )
+                                }
+                                mDataParser!!.start()
+                                mDataParser!!.add(data, Const.BloodPressure)
+                            }
                         } else {
                             Log.e("MybLe1", "add: " + Arrays.toString(data))
                             for (datalog in data) {
@@ -336,7 +359,8 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer) ||
                 viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)||
                 viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)||
-                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox)
+                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox)||
+                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.BloodPressure)
             ) {
                 checkPermissions()
             } else {
@@ -383,6 +407,9 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 bundle.putString("Celcius", Celcius)
                 bundle.putString("Fahrenheit", Fahrenheit)
                 bundle.putString("ECGDataREcord", ECGDataREcord)
+                bundle.putString("mmHgHigh", mmHgHigh)
+                bundle.putString("mmHgLow", mmHgLow)
+                bundle.putString("beatBp", beatBp)
                 findNavController().navigate(R.id.action_patientFragment_to_reportFragment, bundle);
             }
 
@@ -451,18 +478,14 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             override fun onOxiParamsChanged(params: DataParser.OxiParams?) {
                 runBlocking(Dispatchers.Main) {
 
-                    if (viewDataBinding?.deviceList?.selectedItem.toString()
-                            .equals(Const.Oximeter)
-                    ) {
+                    if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) {
                         sp02 = params?.spo2.toString()
                         beat = params?.pulseRate.toString()
                         viewDataBinding?.tvStatus?.setText(
                             "SpO2: " + params?.spo2
                                 .toString() + "   Pulse Rate:" + params?.pulseRate
                         )
-                    } else if (viewDataBinding?.deviceList?.selectedItem.toString()
-                            .equals(Const.Glucometer)
-                    ) {
+                    } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer)) {
                         var ml: Int = (params!!.mmolLvalue)
                         var result: Double = ml.toDouble() / 18
                         val number: Double = result
@@ -476,9 +499,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                             "mg/dL: " + (params?.mmolLvalue)
                                 .toString() + "   mmol/L: " + (solution).toString()
                         )
-                    } else if (viewDataBinding?.deviceList?.selectedItem.toString()
-                            .equals(Const.Thermometer)
-                    ) {
+                    } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
 
 
                         Celcius = params!!.Celcius.toString()
@@ -493,9 +514,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                             (Celcius)
                                 .toString() + " °C" + "  " + (Fahrenheit).toString() + " °F"
                         )
-                    }  else if (viewDataBinding?.deviceList?.selectedItem.toString()
-                            .equals(Const.ECG)
-                    ) {
+                    }  else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
 
 
 
@@ -503,10 +522,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         viewDataBinding?.tvStatus?.setText(
                             ECGDataREcord
                         )
-                    }else if (viewDataBinding?.deviceList?.selectedItem.toString()
-                            .equals(Const.MedicinePillBox)
-                    ) {
-
+                    }else if (viewDataBinding?.deviceList?.selectedItem.toString() .equals(Const.MedicinePillBox)) {
 
                         Celcius = params!!.Celcius.toString()
                         val solutionCelcius: Double =
@@ -519,6 +535,16 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         viewDataBinding?.tvStatus?.setText(
                             (Celcius)
                                 .toString() + " °C" + "  " + (Fahrenheit).toString() + " °F"
+                        )
+                    }else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.BloodPressure)) {
+
+                       mmHgHigh =params!!.mmHgHigh.toString()
+                       mmHgLow =params!!.mmHgLow.toString()
+                       beatBp = params!!.beat.toString()
+
+                        viewDataBinding?.tvStatus?.setText(
+                            (mmHgHigh)
+                                .toString() + " mmHg" + "  " + (mmHgLow).toString() + " mmHg  "+ (beatBp).toString()+" BPM"
                         )
                     }   else {
 
@@ -741,11 +767,20 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         .setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_MedicinePillBox)).build()
                 )
             }
+            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.BloodPressure)) {
+                filters.add(
+                    ScanFilter.Builder()
+                        .setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_BloodPressure)).build()
+                )
+            }
             scanResults.clear()
             deviceSearchAdapter?.setData(scanResults)
             if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
 
                 contecSdk?.startBluetoothSearch(searchCallback, 20000)
+            } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.BloodPressure)) {
+
+                bleScanner.startScan(filters, scanSettings, scanCallback)
             } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
 
                 bleScanner.startScan(null, scanSettings, scanCallback)
