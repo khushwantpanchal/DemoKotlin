@@ -482,8 +482,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         sp02 = params?.spo2.toString()
                         beat = params?.pulseRate.toString()
                         viewDataBinding?.tvStatus?.setText(
-                            "SpO2: " + params?.spo2
-                                .toString() + "   Pulse Rate:" + params?.pulseRate
+                            "SpO2: " + params?.spo2.toString() + " Pulse Rate:" + params?.pulseRate
                         )
                     } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer)) {
                         var ml: Int = (params!!.mmolLvalue)
@@ -496,11 +495,9 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         GluecosedLmmolLvalue = solution.toString()
 
                         viewDataBinding?.tvStatus?.setText(
-                            "mg/dL: " + (params?.mmolLvalue)
-                                .toString() + "   mmol/L: " + (solution).toString()
+                            "mg/dL: " + (params?.mmolLvalue).toString() + " mmol/L: " + (solution).toString()
                         )
                     } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
-
 
                         Celcius = params!!.Celcius.toString()
                         val solutionCelcius: Double =
@@ -511,17 +508,11 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                             String.format("%.1f", Fahrenheit.toDouble()).toDouble()
                         Fahrenheit = solutionFahrenheit.toString()
                         viewDataBinding?.tvStatus?.setText(
-                            (Celcius)
-                                .toString() + " °C" + "  " + (Fahrenheit).toString() + " °F"
+                            (Celcius).toString() + " °C" + " " + (Fahrenheit).toString() + " °F"
                         )
                     }  else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
-
-
-
                         ECGDataREcord = params?.ecgData.toString()
-                        viewDataBinding?.tvStatus?.setText(
-                            ECGDataREcord
-                        )
+                        viewDataBinding?.tvStatus?.setText(ECGDataREcord)
                     }else if (viewDataBinding?.deviceList?.selectedItem.toString() .equals(Const.MedicinePillBox)) {
 
                         Celcius = params!!.Celcius.toString()
@@ -533,18 +524,15 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                             String.format("%.1f", Fahrenheit.toDouble()).toDouble()
                         Fahrenheit = solutionFahrenheit.toString()
                         viewDataBinding?.tvStatus?.setText(
-                            (Celcius)
-                                .toString() + " °C" + "  " + (Fahrenheit).toString() + " °F"
+                            (Celcius).toString() + " °C" + "  " + (Fahrenheit).toString() + " °F"
                         )
                     }else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.BloodPressure)) {
 
                        mmHgHigh =params!!.mmHgHigh.toString()
                        mmHgLow =params!!.mmHgLow.toString()
                        beatBp = params!!.beat.toString()
-
                         viewDataBinding?.tvStatus?.setText(
-                            (mmHgHigh)
-                                .toString() + " mmHg" + "  " + (mmHgLow).toString() + " mmHg  "+ (beatBp).toString()+" BPM"
+                            "Systolic "+(mmHgHigh).toString() + " mmHg" + "  " + "Diastolic "+(mmHgLow).toString() + " mmHg "+ (beatBp).toString()+" BPM"
                         )
                     }   else {
 
