@@ -7,16 +7,18 @@
 
         <string name="message">Address</string>
         <string name="send">Next</string>
-        <string name="email">Email</string>
+        <string name="email">Email:</string>
         <string name="name">Name</string>
-        <string name="mobno">Mobile No.</string>
+        <string name="mobno">Mobile Number:</string>
         <string name="age">Age</string>
     <string name="patient_details">Patient Details</string>
     <string name="searchdetails">Search Details</string>
+    <string name="result">Report Details</string>
+    <string name="report">Report</string>
+    <string name="device">Device</string>
     <string name="searchdevice">Search Device</string>
     <string name="select_device">Select Device</string>
     <string-array name="devicelist">
-        <item>Select Report</item>
         <item >Oximeter</item>
         <item>Glucometer</item>
         <item >Thermometer</item>
@@ -26,12 +28,16 @@
     </string-array>
     <string name="rationale_title">Permission required</string>
     <string name="rationale_message">we need permission for find your <b>Bluetooth</b> </string>
-    <string name="NewTest">New Patient Test</string>
+    <string name="NewTest">New Patient</string>
     <string name="retry">Retry</string>
     <string name="GenerateReport">Generate Report</string>
-    <string name="reGenerateReport">Re Generate Report</string>
+    <string name="reGenerateReport">Re Test</string>
     <string name="SendReport">Submit Report</string>
 
-    <string name="Result">Result</string>
+    <string name="Result">Result:</string>
+    <string name="forgetpassword">Forget password?</string>
+    <string name="login">Login</string>
+    <string name="ReportName">"Report Name: "</string>
+    <string name="date">Date:</string>
 
 </resources>

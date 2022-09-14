@@ -191,4 +191,9 @@ class BaseActivity : AppCompatActivity() {
                 PackageManager.PERMISSION_GRANTED
     }
 
+    override fun onBackPressed() {
+        super.onBackPressed()
+
+    }
+
 }

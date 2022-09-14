@@ -4,15 +4,19 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/drawable/bg_dot_line.xml" value="0.1" />
+        <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/drawable/btnbglogin.xml" value="0.1505" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/drawable/centre_background.xml" value="0.1" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/drawable/centre_button.xml" value="0.1" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/drawable/edittext_bg.xml" value="0.2425" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/drawable/ic_launcher_background.xml" value="0.312" />
+        <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/drawable/shapemail.xml" value="0.1505" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/drawable/statusbar.xml" value="0.2975" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/font/fontfamily.xml" value="0.21822916666666667" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/font/poppins.xml" value="0.1" />
+        <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/device_fragment.xml" value="0.5" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/devices_dialog.xml" value="0.2296875" />
-        <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/item_device_search.xml" value="0.1" />
+        <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/item_device_search.xml" value="0.25" />
+        <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/login_screen.xml" value="0.2" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/main_activity.xml" value="0.25" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/main_fragment.xml" value="0.18" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/patient_details_fragment.xml" value="0.2776268115942029" />
@@ -21,6 +25,7 @@
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/search_dialog_device_item.xml" value="0.33106884057971014" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/search_fragment.xml" value="0.33" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/spinner_item.xml" value="0.11875" />
+        <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/splash_screen.xml" value="0.28815733219324496" />
         <entry key="..\:/Users/khushwant.panchal/StudioProjects/HospitalDevice/app/src/main/res/layout/item_device_search.xml" value="0.36666666666666664" />
         <entry key="..\:/Users/khushwant.panchal/StudioProjects/HospitalDevice/app/src/main/res/layout/main_activity.xml" value="0.36666666666666664" />
         <entry key="..\:/Users/khushwant.panchal/StudioProjects/HospitalDevice/app/src/main/res/layout/main_fragment.xml" value="0.3224431818181818" />

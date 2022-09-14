@@ -14,10 +14,13 @@ import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.ParcelUuid
+import android.text.Html
 import android.util.Log
+import android.view.KeyEvent
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
@@ -54,6 +57,7 @@ import com.ipath.hospitaldevice.ble.adapter.SearchDevicesDialog
 import com.ipath.hospitaldevice.ble.data.DataParser
 import com.ipath.hospitaldevice.databinding.SearchFragmentBinding
 import com.ipath.hospitaldevice.ui.adapter.DeviceSearchAdapter
+import com.ipath.hospitaldevice.utils.Utils.SetupHtmlView
 import com.ipath.hospitaldevice.utils.Utils.getManufacturerSpecificData
 import kotlinx.coroutines.*
 import java.util.*
@@ -61,7 +65,7 @@ import kotlin.coroutines.CoroutineContext
 
 
 class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientNavigator,
-    CoroutineScope, BleController.StateListener {
+    CoroutineScope {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var deviceSearchAdapter: DeviceSearchAdapter? = null
 
@@ -86,19 +90,21 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     var mmHgHigh = "";
     var mmHgLow = "";
     var beatBp = "";
+    var color :Int= Color.WHITE;
+    var color2 :Int= Color.WHITE;
+    var color3 :Int= Color.WHITE;
 
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + Job()
 
-    var  arg :String?= "";
-    var mobile:String? = "";
-    var email:String? = "";
+    var arg: String? = "";
+    var mobile: String? = "";
+    var email: String? = "";
+    var device: String = "";
 
     private var mDataParser: DataParser? = null
-    private var mBleControl: BleController? = null
 
-    private var mSearchDialog: SearchDevicesDialog? = null
-    private var mBtDevicesAdapter: DeviceListAdapter? = null
-    private val mBtDevices = java.util.ArrayList<BluetoothDevice>()
-
+    private val scanResults = mutableListOf<ScanResult>()
 
     lateinit var activityResultLauncher: ActivityResultLauncher<String>;
     lateinit var requestMultiplePermissions: ActivityResultLauncher<Array<String>>;
@@ -107,6 +113,210 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     private val bleScanner by lazy {
         bluetoothAdapter.bluetoothLeScanner
     }
+
+
+    override fun getViewModel(): SearchVM {
+        searchVM.setNavigator(this)
+        return searchVM
+    }
+
+    override fun setupToolBar() {
+
+    }
+
+    override fun getBindingVariable(): Int {
+        return BR.sfragment
+    }
+
+    override fun getLayoutId(): Int {
+        return R.layout.search_fragment
+    }
+
+    override fun setupUI() {
+        ecgConnectivity()
+        setupTitle(getString(R.string.device))
+        setupBackButtonEnable(true, object : View.OnClickListener {
+            override fun onClick(v: View?) {
+                disconnect()
+            }
+        })
+        getView()?.setOnKeyListener(object : View.OnKeyListener {
+            override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
+                return if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    disconnect()
+                    true
+                } else false
+            }
+        })
+        arg = arguments?.getString("pname")
+        email = arguments?.getString("email")
+        mobile = arguments?.getString("mobile")
+        device = arguments?.getString("device")!!
+        viewDataBinding?.pName?.text = arg
+        viewDataBinding?.dName?.text = device
+
+
+        val linearLayoutManager = LinearLayoutManager(context)
+        deviceSearchAdapter = context?.let { DeviceSearchAdapter(it, scanResults) }
+
+        viewDataBinding?.recyclerView?.setLayoutManager(linearLayoutManager)
+        viewDataBinding?.recyclerView?.setAdapter(deviceSearchAdapter)
+        setUpAdapter()
+        viewDataBinding?.btnSend?.setOnClickListener {
+            if (device.toString().equals(Const.Oximeter) ||
+                device.toString().equals(Const.Glucometer) ||
+                device.toString().equals(Const.Thermometer) ||
+                device.toString().equals(Const.ECG) ||
+                device.toString().equals(Const.MedicinePillBox) ||
+                device.toString().equals(Const.BloodPressure)
+            ) {
+                checkPermissions()
+            } else {
+                "Please Select device".toast()
+            }
+        }
+        viewDataBinding?.btnSend?.callOnClick()
+        viewDataBinding?.btnRetry?.setOnClickListener {
+
+            if (isConnected) {
+
+                stopScan()
+                disconnect()
+            }
+        }
+        viewDataBinding?.newData?.setOnClickListener {
+            contecSdk!!.getData(communicateCallback)
+        }
+        viewDataBinding?.btnReport?.setOnClickListener {
+            if (isConnected) {
+                stopScan()
+                disconnect()
+                val bundle = Bundle()
+                bundle.putString("pname", arg)
+                bundle.putString("email", email)
+                bundle.putString("mobile", mobile)
+                bundle.putString("sp02", sp02)
+                bundle.putString("beat", beat)
+                bundle.putString("GluecosedL", GluecosedL)
+                bundle.putString("GluecosedLmmolLvalue", GluecosedLmmolLvalue)
+                bundle.putString("Celcius", Celcius)
+                bundle.putString("Fahrenheit", Fahrenheit)
+                bundle.putString("ECGDataREcord", ECGDataREcord)
+                bundle.putString("mmHgHigh", mmHgHigh)
+                bundle.putString("mmHgLow", mmHgLow)
+                bundle.putString("beatBp", beatBp)
+                bundle.putInt("color", color)
+                bundle.putInt("color2", color2)
+                bundle.putInt("color3.", color3)
+                findNavController().navigate(R.id.action_patientFragment_to_reportFragment, bundle);
+            }
+
+        }
+
+        deviceSearchAdapter!!.setOnItemClick(object : DeviceSearchAdapter.OnItemClickListener {
+            @SuppressLint("MissingPermission")
+            override fun onItemClick(position: Int) {
+
+                connect(position);
+            }
+        })
+
+
+
+        mDataParser = DataParser(object : DataParser.onPackageReceivedListener {
+
+
+            override fun onOxiParamsChanged(params: DataParser.OxiParams?) {
+                runBlocking(Dispatchers.Main) {
+
+                    if (device.toString().equals(Const.Oximeter)) {
+                        sp02 = params?.spo2.toString()
+                        beat = params?.pulseRate.toString()
+                        color = params?.color!!
+                        color2 = params?.color2!!
+                        color3 = params?.color3!!
+                        viewDataBinding?.tvStatus?.setText(
+                            "SpO2: " + params?.spo2.toString() + " \nPulse Rate: " + params?.pulseRate
+                        )
+                    } else if (device.toString().equals(Const.Glucometer)) {
+                        var ml: Int = (params!!.mmolLvalue)
+                        var result: Double = ml.toDouble() / 18
+                        val number: Double = result
+                        val number3digits: Double = String.format("%.3f", number).toDouble()
+                        val number2digits: Double = String.format("%.2f", number3digits).toDouble()
+                        val solution: Double = String.format("%.1f", number2digits).toDouble()
+                        GluecosedL = params?.mmolLvalue.toString()
+                        GluecosedLmmolLvalue = solution.toString()
+                        color = params?.color!!
+                        color2 = params?.color2!!
+                        color3 = params?.color3!!
+                        viewDataBinding?.tvStatus?.setText(
+                            "mg/dL: " + (params?.mmolLvalue).toString() + " \nmmol/L: " + (solution).toString()
+                        )
+                    } else if (device.toString().equals(Const.Thermometer)) {
+
+                        Celcius = params!!.Celcius.toString()
+                        val solutionCelcius: Double =
+                            String.format("%.1f", Celcius.toDouble()).toDouble()
+                        Celcius = solutionCelcius.toString()
+                        Fahrenheit = params!!.Fahrenheit.toString()
+                        color = params?.color!!
+                        color2 = params?.color2!!
+                        color3 = params?.color3!!
+                        val solutionFahrenheit: Double =
+                            String.format("%.1f", Fahrenheit.toDouble()).toDouble()
+                        Fahrenheit = solutionFahrenheit.toString()
+                        viewDataBinding?.tvStatus?.setText(
+                            (Celcius).toString() + " °C" + " \n" + (Fahrenheit).toString() + " °F"
+                        )
+
+                    } else if (device.toString().equals(Const.ECG)) {
+                        ECGDataREcord = params?.ecgData.toString()
+                        viewDataBinding?.tvStatus?.setText(ECGDataREcord)
+                    } else if (device.toString().equals(Const.MedicinePillBox)) {
+
+                        Celcius = params!!.Celcius.toString()
+                        val solutionCelcius: Double =
+                            String.format("%.1f", Celcius.toDouble()).toDouble()
+                        Celcius = solutionCelcius.toString()
+                        Fahrenheit = params!!.Fahrenheit.toString()
+                        color = params?.color!!
+                        color2 = params?.color2!!
+                        color3 = params?.color3!!
+                        val solutionFahrenheit: Double =
+                            String.format("%.1f", Fahrenheit.toDouble()).toDouble()
+                        Fahrenheit = solutionFahrenheit.toString()
+                        viewDataBinding?.tvStatus?.setText(
+                            (Celcius).toString() + " °C" + "  \n" + (Fahrenheit).toString() + " °F"
+                        )
+                    } else if (device.toString().equals(Const.BloodPressure)) {
+
+                        mmHgHigh = params!!.mmHgHigh.toString()
+                        mmHgLow = params!!.mmHgLow.toString()
+                        beatBp = params!!.beat.toString()
+                        color = params?.color!!
+                        color2 = params?.color2!!
+                        color3 = params?.color3!!
+                        viewDataBinding?.tvStatus?.setText(
+                            "Systolic " + (mmHgHigh).toString() + " mmHg" + "  \n" + "Diastolic " + (mmHgLow).toString() + " mmHg \n" + (beatBp).toString() + " BPM"
+                        )
+                    } else {
+
+                    }
+                }
+            }
+
+            override fun onPlethWaveReceived(amp: Int) {
+                runBlocking(Dispatchers.Main) {
+                    viewDataBinding?.wfvPleth?.addAmp(amp)
+                }
+            }
+
+        })
+
+
+    }
+
     var bleConnectCallback: BleConnectCallback = object : BleConnectCallback {
         override fun onStart(startConnectSuccess: Boolean, info: String, device: BleDevice) {
             if (startConnectSuccess) {
@@ -136,25 +346,40 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             }
         }
 
-        override fun onConnected(device: BleDevice) {
+        override fun onConnected(devicebt: BleDevice) {
 
             isConnected = true
-            Log.d("MybLe", "Intent: ${device.connected}")
+            Log.d("MybLe", "Intent: ${devicebt.connected}")
             viewDataBinding?.btnRetry?.visibility = View.VISIBLE
             viewDataBinding?.btnReport?.visibility = View.VISIBLE
             viewDataBinding?.btnSend?.text = "Disconnect"
             Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
 
-            bleManager.notify(device,
-                if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer))Const.UUID_SERVICE_DATA_GlucoMeter.toString()
-                else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) Const.UUID_SERVICE_DATA_Oximeter.toString()
-                else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) Const.UUID_SERVICE_DATA_Thermometer.toString()
-                else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox)) Const.UUID_SERVICE_DATA_MedicinePillBox.toString()else Const.UUID_SERVICE_DATA_BloodPressure.toString(),if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer))
-                    Const.UUID_CHARACTER_RECEIVE_GlucoMeter.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter))
-                        Const.UUID_CHARACTER_RECEIVE_Oximeter.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) Const.UUID_CHARACTER_RECEIVE_Thermometer.toString() else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox))  Const.UUID_CHARACTER_RECEIVE_MedicinePillBox.toString() else  Const.UUID_CHARACTER_RECEIVE_BloodPressure.toString(),
+            bleManager.notify(devicebt,
+                if (device.toString()
+                        .equals(Const.Glucometer)
+                ) Const.UUID_SERVICE_DATA_GlucoMeter.toString()
+                else if (device.toString()
+                        .equals(Const.Oximeter)
+                ) Const.UUID_SERVICE_DATA_Oximeter.toString()
+                else if (device.toString()
+                        .equals(Const.Thermometer)
+                ) Const.UUID_SERVICE_DATA_Thermometer.toString()
+                else if (device.toString()
+                        .equals(Const.MedicinePillBox)
+                ) Const.UUID_SERVICE_DATA_MedicinePillBox.toString() else Const.UUID_SERVICE_DATA_BloodPressure.toString(),
+                if (device.toString().equals(Const.Glucometer))
+                    Const.UUID_CHARACTER_RECEIVE_GlucoMeter.toString() else if (device.toString()
+                        .equals(Const.Oximeter)
+                )
+                    Const.UUID_CHARACTER_RECEIVE_Oximeter.toString() else if (device.toString()
+                        .equals(Const.Thermometer)
+                ) Const.UUID_CHARACTER_RECEIVE_Thermometer.toString() else if (device.toString()
+                        .equals(Const.MedicinePillBox)
+                ) Const.UUID_CHARACTER_RECEIVE_MedicinePillBox.toString() else Const.UUID_CHARACTER_RECEIVE_BloodPressure.toString(),
                 object : BleNotifyCallback {
-                    override fun onCharacteristicChanged( data: ByteArray,device: BleDevice) {
-                        if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) {
+                    override fun onCharacteristicChanged(data: ByteArray, devicebt: BleDevice) {
+                        if (device.toString().equals(Const.Oximeter)) {
                             mDataParser!!.start()
                             if (data.size == 10) {
                                 mDataParser!!.start()
@@ -164,10 +389,13 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 //                            Log.d("MybLe", "hex: ${data.toHex()}")
 //                            Log.d("MybLe", "Intent3: ${String(data)}")
                             }
-                        } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer)) {
+                        } else if (device.toString().equals(Const.Glucometer)) {
 
-                            if (!Arrays.toString(data).equals("[-2, 106, 117, 90, 85, -86, -69, -52]") &&
-                                !Arrays.toString(data).equals("[-2, 106, 117, 90, 85, -69, -69, -52]")) {
+                            if (!Arrays.toString(data)
+                                    .equals("[-2, 106, 117, 90, 85, -86, -69, -52]") &&
+                                !Arrays.toString(data)
+                                    .equals("[-2, 106, 117, 90, 85, -69, -69, -52]")
+                            ) {
                                 val de = data[7]
                                 if (de.toInt() > 5 || de.toInt() < 0) {
                                     mDataParser!!.start()
@@ -179,7 +407,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 //                                    Log.d("MybLe", "hex: ${data.toHex()}")
 //                                    Log.d("MybLe", "Intent3: ${String(data)}")
                             }
-                        }else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
+                        } else if (device.toString().equals(Const.Thermometer)) {
 
                             Log.e("MybLe1", "add: " + Arrays.toString(data))
                             for (datalog in data) {
@@ -187,11 +415,14 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                                 val hinumber = hi.toInt()
                                 val hinumberunsignedHex = String.format("%02X", hinumber and 0xff)
                                 val lownumberdecimal: Int = hinumberunsignedHex.toInt(16)
-                                Log.e("MybLe  current",hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString())
+                                Log.e(
+                                    "MybLe  current",
+                                    hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString()
+                                )
                             }
                             mDataParser!!.start()
                             mDataParser!!.add(data, Const.Thermometer)
-                        } else  if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const. MedicinePillBox)) {
+                        } else if (device.toString().equals(Const.MedicinePillBox)) {
 
                             Log.e("MybLe1", "add: " + Arrays.toString(data))
                             for (datalog in data) {
@@ -199,11 +430,14 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                                 val hinumber = hi.toInt()
                                 val hinumberunsignedHex = String.format("%02X", hinumber and 0xff)
                                 val lownumberdecimal: Int = hinumberunsignedHex.toInt(16)
-                                Log.e("MybLe  current",hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString())
+                                Log.e(
+                                    "MybLe  current",
+                                    hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString()
+                                )
                             }
                             mDataParser!!.start()
                             mDataParser!!.add(data, Const.MedicinePillBox)
-                        }  else  if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const. BloodPressure)) {
+                        } else if (device.toString().equals(Const.BloodPressure)) {
                             Log.e("MybLe1", "add: " + Arrays.toString(data))
                             if (data.size == 8) {
                                 Log.e("MybLe1", "add: " + Arrays.toString(data))
@@ -228,7 +462,10 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                                 val hinumber = hi.toInt()
                                 val hinumberunsignedHex = String.format("%02X", hinumber and 0xff)
                                 val lownumberdecimal: Int = hinumberunsignedHex.toInt(16)
-                                Log.e("MybLe  current",hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString())
+                                Log.e(
+                                    "MybLe  current",
+                                    hinumber.toString() + "\nDecimal " + lownumberdecimal.toString() + "\nHexa " + hinumberunsignedHex.toString()
+                                )
                             }
                             mDataParser!!.start()
                             mDataParser!!.add(data, Const.ECG)
@@ -286,22 +523,30 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             super.onScanResult(callbackType, result)
             if (result != null) {
 
-                    val indexQuery =
-                        scanResults.indexOfFirst { it.device.address == result.device.address }
-                    if (indexQuery != -1) {
-                        scanResults[indexQuery] = result
-                        deviceSearchAdapter?.notifyItemChanged(indexQuery)
-                    } else {
-                        if ((viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer) && result.device.name!=null && result.device.name.contains(Const.Thermometer)) || !viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
+                val indexQuery =
+                    scanResults.indexOfFirst { it.device.address == result.device.address }
+                if (indexQuery != -1) {
+                    scanResults[indexQuery] = result
+                    deviceSearchAdapter?.notifyItemChanged(indexQuery)
+                } else {
+                    if ((device.toString()
+                            .equals(Const.Thermometer) && result.device.name != null && result.device.name.contains(
+                            Const.Thermometer
+                        )) || !device.toString().equals(Const.Thermometer)
+                    ) {
 
-                            scanResults.add(result)
-                            scanResults.sortByDescending { it.rssi }
-                            val predicate = Predicate { x: ScanResult -> x.device.name == null }
-                            removeItems(scanResults, predicate)
-                        }
+                        scanResults.add(result)
+                        scanResults.sortByDescending { it.rssi }
+                        val predicate = Predicate { x: ScanResult -> x.device.name == null }
+                        removeItems(scanResults, predicate)
                     }
                 }
+                if (!isConnected && scanResults.size == 1) {
+                deviceSearchAdapter?.notifyItemChanged(indexQuery)
+                    connect(0)
+                }
             }
+        }
 
         override fun onScanFailed(errorCode: Int) {
             super.onScanFailed(errorCode)
@@ -309,269 +554,60 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         }
     }
 
-    private val scanResults = mutableListOf<ScanResult>()
+    @SuppressLint("MissingPermission")
+    fun connect(position: Int) {
+        stopScan()
 
-    override fun getViewModel(): SearchVM {
-        searchVM.setNavigator(this)
-        return searchVM
-    }
-
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main + Job()
+        if (!isConnected) {
 
 
-    override fun setupToolBar() {
-
-    }
-
-    override fun getBindingVariable(): Int {
-        return BR.sfragment
-    }
-
-    override fun getLayoutId(): Int {
-        return R.layout.search_fragment
-    }
-
-    override fun setupUI() {
-        ecgConnectivity()
-        setupTitle(getString(R.string.searchdetails))
-        setupBackButtonEnable(true, true)
-         arg = arguments?.getString("pname")
-         email = arguments?.getString("email")
-         mobile = arguments?.getString("mobile")
-        viewDataBinding?.pName?.text = arg;
-        val adapter = context?.let {
-            ArrayAdapter.createFromResource(
-                it, R.array.devicelist, R.layout.spinner_item
-            )
-        }
-        adapter?.setDropDownViewResource(R.layout.spinner_item)
-        viewDataBinding?.deviceList?.setAdapter(adapter)
-
-        val linearLayoutManager = LinearLayoutManager(context)
-        deviceSearchAdapter = context?.let { DeviceSearchAdapter(it, scanResults) }
-
-        viewDataBinding?.recyclerView?.setLayoutManager(linearLayoutManager)
-        viewDataBinding?.recyclerView?.setAdapter(deviceSearchAdapter)
-        setUpAdapter()
-        viewDataBinding?.btnSend?.setOnClickListener {
-            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter) ||
-                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer) ||
-                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)||
-                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)||
-                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox)||
-                viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.BloodPressure)
-            ) {
-                checkPermissions()
+            viewDataBinding?.tvParams?.setText("Name:")
+            viewDataBinding?.tvName?.setText(scanResults.get(position).device.name)
+            viewDataBinding?.tvMac?.setText("Mac Address:")
+            viewDataBinding?.tvMacAddress?.setText(scanResults.get(position).device.address)
+            if (viewDataBinding?.wfvPleth?.mSurfaceHolder?.lockCanvas() != null) {
+                viewDataBinding?.wfvPleth?.reset()
+            }
+            if (device.toString().equals(Const.ECG)) {
+                isListen = false
+                contecSdk!!.defineBTPrefix(DeviceType.PM10, "EMAY")
+                contecSdk!!.connect(scanResults.get(position).device, mConnectCallback)
             } else {
-                "Please Select device".toast()
+                bleManager = BleManager.getInstance().init(context)
+                bleManager.connect(
+                    scanResults.get(position).device.address,
+                    bleConnectCallback
+                );
             }
+
+
+        } else {
+
+            disconnect()
         }
-
-        viewDataBinding?.btnRetry?.setOnClickListener {
-//            val bundle = Bundle()
-//            bundle.putString("pname", arg)
-//            bundle.putString("email", email)
-//            bundle.putString("mobile", mobile)
-//            findNavController().navigate(R.id.action_patientFragment, bundle);
-            if (isConnected) {
-
-                stopScan()
-                if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
-                    contecSdk!!.disconnect()
-                }else {
-                    bleManager.disconnectAll()
-                }
-            }
-        }
-        viewDataBinding?.newData?.setOnClickListener {
-             contecSdk!!.getData(communicateCallback)
-        }
-        viewDataBinding?.btnReport?.setOnClickListener {
-            if (isConnected) {
-                stopScan()
-                if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
-                    contecSdk!!.disconnect()
-                }else{
-                    bleManager.disconnectAll()
-
-                }
-                val bundle = Bundle()
-                bundle.putString("pname", arg)
-                bundle.putString("email", email)
-                bundle.putString("mobile", mobile)
-                bundle.putString("sp02", sp02)
-                bundle.putString("beat", beat)
-                bundle.putString("GluecosedL", GluecosedL)
-                bundle.putString("GluecosedLmmolLvalue", GluecosedLmmolLvalue)
-                bundle.putString("Celcius", Celcius)
-                bundle.putString("Fahrenheit", Fahrenheit)
-                bundle.putString("ECGDataREcord", ECGDataREcord)
-                bundle.putString("mmHgHigh", mmHgHigh)
-                bundle.putString("mmHgLow", mmHgLow)
-                bundle.putString("beatBp", beatBp)
-                findNavController().navigate(R.id.action_patientFragment_to_reportFragment, bundle);
-            }
-
-        }
-//        recyclerClear.setOnClickListener {
-//            if (isScanning) stopScan()
-//            deviceSearchAdapter.setData(mutableListOf())
-//        }
-        deviceSearchAdapter!!.setOnItemClick(object : DeviceSearchAdapter.OnItemClickListener {
-            @SuppressLint("MissingPermission")
-            override fun onItemClick(position: Int) {
-                stopScan()
-
-                if (!isConnected) {
-//                    mBleControl!!.scanLeDevice(true)
-//                    mSearchDialog!!.show()
-//                    mBtDevices.clear()
-//                    mBtDevicesAdapter!!.notifyDataSetChanged()
-
-                    viewDataBinding?.tvParams?.setText(
-                        "Name:" + scanResults.get(position).device.name + "     " + "Mac:" + scanResults.get(
-                            position
-                        ).device.address
-                    )
-                    if (viewDataBinding?.wfvPleth?.mSurfaceHolder?.lockCanvas() != null) {
-                        viewDataBinding?.wfvPleth?.reset()
-                    }
-//                    mBleControl!!.connect(scanResults.get(position).device)
-                    if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
-                        isListen = false
-                        contecSdk!!.defineBTPrefix(DeviceType.PM10, "EMAY")
-                        contecSdk!!.connect(scanResults.get(position).device, mConnectCallback)
-                    }else{
-                        bleManager = BleManager.getInstance().init(context)
-                        bleManager.connect(
-                            scanResults.get(position).device.address,
-                            bleConnectCallback
-                        );
-                    }
-
-
-                } else {
-//                    viewDataBinding?.wfvPleth?.reset()
-//                    mBleControl!!.disconnect()
-                    if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
-
-                        if (isConnected) {
-                            contecSdk?.disconnect()
-                        }
-                    }else {
-                        bleManager.disconnect(scanResults.get(position).device.address)
-                    }
-                }
-
-//                m_myUUID = UUID.fromString(scanResults.get(position).scanRecord?.serviceUuids?.get(0).toString())
-//                m_address=scanResults.get(position).device.address
-//                context?.let { ConnectToDevice(it).execute() }
-            }
-        })
-
-
-
-        mDataParser = DataParser(object : DataParser.onPackageReceivedListener {
-
-
-            override fun onOxiParamsChanged(params: DataParser.OxiParams?) {
-                runBlocking(Dispatchers.Main) {
-
-                    if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) {
-                        sp02 = params?.spo2.toString()
-                        beat = params?.pulseRate.toString()
-                        viewDataBinding?.tvStatus?.setText(
-                            "SpO2: " + params?.spo2.toString() + " Pulse Rate:" + params?.pulseRate
-                        )
-                    } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer)) {
-                        var ml: Int = (params!!.mmolLvalue)
-                        var result: Double = ml.toDouble() / 18
-                        val number: Double = result
-                        val number3digits: Double = String.format("%.3f", number).toDouble()
-                        val number2digits: Double = String.format("%.2f", number3digits).toDouble()
-                        val solution: Double = String.format("%.1f", number2digits).toDouble()
-                        GluecosedL = params?.mmolLvalue.toString()
-                        GluecosedLmmolLvalue = solution.toString()
-
-                        viewDataBinding?.tvStatus?.setText(
-                            "mg/dL: " + (params?.mmolLvalue).toString() + " mmol/L: " + (solution).toString()
-                        )
-                    } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
-
-                        Celcius = params!!.Celcius.toString()
-                        val solutionCelcius: Double =
-                            String.format("%.1f", Celcius.toDouble()).toDouble()
-                        Celcius = solutionCelcius.toString()
-                        Fahrenheit = params!!.Fahrenheit.toString()
-                        val solutionFahrenheit: Double =
-                            String.format("%.1f", Fahrenheit.toDouble()).toDouble()
-                        Fahrenheit = solutionFahrenheit.toString()
-                        viewDataBinding?.tvStatus?.setText(
-                            (Celcius).toString() + " °C" + " " + (Fahrenheit).toString() + " °F"
-                        )
-                    }  else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
-                        ECGDataREcord = params?.ecgData.toString()
-                        viewDataBinding?.tvStatus?.setText(ECGDataREcord)
-                    }else if (viewDataBinding?.deviceList?.selectedItem.toString() .equals(Const.MedicinePillBox)) {
-
-                        Celcius = params!!.Celcius.toString()
-                        val solutionCelcius: Double =
-                            String.format("%.1f", Celcius.toDouble()).toDouble()
-                        Celcius = solutionCelcius.toString()
-                        Fahrenheit = params!!.Fahrenheit.toString()
-                        val solutionFahrenheit: Double =
-                            String.format("%.1f", Fahrenheit.toDouble()).toDouble()
-                        Fahrenheit = solutionFahrenheit.toString()
-                        viewDataBinding?.tvStatus?.setText(
-                            (Celcius).toString() + " °C" + "  " + (Fahrenheit).toString() + " °F"
-                        )
-                    }else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.BloodPressure)) {
-
-                       mmHgHigh =params!!.mmHgHigh.toString()
-                       mmHgLow =params!!.mmHgLow.toString()
-                       beatBp = params!!.beat.toString()
-                        viewDataBinding?.tvStatus?.setText(
-                            "Systolic "+(mmHgHigh).toString() + " mmHg" + "  " + "Diastolic "+(mmHgLow).toString() + " mmHg "+ (beatBp).toString()+" BPM"
-                        )
-                    }   else {
-
-                    }
-                }
-            }
-
-            override fun onPlethWaveReceived(amp: Int) {
-                runBlocking(Dispatchers.Main) {
-                    viewDataBinding?.wfvPleth?.addAmp(amp)
-                }
-            }
-
-        })
-
-
-        mBleControl = BleController.getDefaultBleController(this)
-        mBleControl!!.enableBtAdapter()
-        context?.let { mBleControl!!.bindService(it) }
-
-        mBtDevicesAdapter = DeviceListAdapter(context, mBtDevices)
-        mSearchDialog = object : SearchDevicesDialog(context, mBtDevicesAdapter) {
-            override fun onSearchButtonClicked() {
-                mBtDevices.clear()
-                mBtDevicesAdapter!!.notifyDataSetChanged()
-                mBleControl!!.scanLeDevice(true)
-            }
-
-            @SuppressLint("MissingPermission")
-            override fun onClickDeviceItem(pos: Int) {
-                val device = mBtDevices[pos]
-
-                mBleControl!!.connect(device)
-                dismiss()
-            }
-        }
-
     }
 
+    @SuppressLint("MissingPermission")
+    fun disconnect() {
+        if (isConnected) {
+
+            if (device.toString().equals(Const.ECG)) {
+
+                if (isConnected) {
+                    contecSdk?.disconnect()
+                }
+            } else {
+
+                    if (bleManager.connectedDevices.size > 0) {
+                        bleManager.disconnectAll()
+                    }
+            }
+            viewDataBinding?.tvParams?.setText("")
+            viewDataBinding?.tvName?.setText("")
+            viewDataBinding?.tvMac?.setText("")
+            viewDataBinding?.tvMacAddress?.setText("")
+        }
+    }
 
     override fun setupObserver() {
 
@@ -579,7 +615,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 
 
     override fun onEventClicked() {
-//        findNavController().navigate(WelcomeFragmentDirections.Fragment_to_patientFragment)
+
     }
 
     fun ByteArray.toHex(): String =
@@ -605,7 +641,8 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 }
 
             } else {
-                BleManager.enableBluetooth(activity, 12530);
+                askPermission()
+
             }
         } else {
 
@@ -702,60 +739,39 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         if (isScanning) {
 
             stopScan()
-            if (isConnected) {
-                if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
-
-                    if (isConnected) {
-                        contecSdk?.disconnect()
-                    }
-                }else
-                if (bleManager.connectedDevices.size > 0) {
-                    bleManager.disconnectAll()
-                }
-            }
+            disconnect()
         } else {
             //start scan with specified scanOptions
-            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
-
-                if (isConnected) {
-                    contecSdk?.disconnect()
-                }
-            }else{
-                if (isConnected) {
-                    if (bleManager.connectedDevices.size > 0) {
-                        bleManager.disconnectAll()
-                    }
-                }
-            }
+            disconnect()
             var filters: List<ScanFilter>? = null
             filters = ArrayList()
-            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Oximeter)) {
+            if (device.toString().equals(Const.Oximeter)) {
                 filters.add(
                     ScanFilter.Builder()
                         .setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_Oximeter)).build()
                 )
             }
 
-            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Glucometer)) {
+            if (device.toString().equals(Const.Glucometer)) {
                 filters.add(
                     ScanFilter.Builder()
                         .setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_GlucoMeter)).build()
                 )
             }
 
-            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
+            if (device.toString().equals(Const.Thermometer)) {
                 filters.add(
                     ScanFilter.Builder()
                         .setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_Thermometer)).build()
                 )
             }
-            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox)) {
+            if (device.toString().equals(Const.MedicinePillBox)) {
                 filters.add(
                     ScanFilter.Builder()
                         .setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_MedicinePillBox)).build()
                 )
             }
-            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.BloodPressure)) {
+            if (device.toString().equals(Const.BloodPressure)) {
                 filters.add(
                     ScanFilter.Builder()
                         .setServiceUuid(ParcelUuid(Const.UUID_SERVICE_DATA_BloodPressure)).build()
@@ -763,16 +779,16 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             }
             scanResults.clear()
             deviceSearchAdapter?.setData(scanResults)
-            if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
+            if (device.toString().equals(Const.ECG)) {
 
                 contecSdk?.startBluetoothSearch(searchCallback, 20000)
-            } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.BloodPressure)) {
+            } else if (device.toString().equals(Const.BloodPressure)) {
 
                 bleScanner.startScan(filters, scanSettings, scanCallback)
-            } else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
+            } else if (device.toString().equals(Const.Thermometer)) {
 
                 bleScanner.startScan(null, scanSettings, scanCallback)
-            }  else if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.MedicinePillBox)) {
+            } else if (device.toString().equals(Const.MedicinePillBox)) {
 
                 bleScanner.startScan(null, scanSettings, scanCallback)
             } else {
@@ -787,12 +803,12 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 
     @SuppressLint("MissingPermission")
     private fun stopScan() {
-        if (viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.ECG)) {
+        if (device.toString().equals(Const.ECG)) {
 
             contecSdk?.stopBluetoothSearch()
 
             isScanning = false
-        }else {
+        } else {
             Log.d("TAG", "scanResults: $scanResults")
             bleScanner.stopScan(scanCallback)
             isScanning = false
@@ -822,55 +838,19 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     }
 
 
-    override fun onConnected() {
-//        isConnected=true;
-        viewDataBinding?.btnSend?.text = "Disconnect"
-        Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
-    }
-
-    override fun onDisconnected() {
-        isConnected = false;
-        Toast.makeText(context, "Disconnected", Toast.LENGTH_SHORT).show()
-        viewDataBinding?.btnSend?.setText("Search")
-//        llChangeName.setVisibility(View.GONE)
-    }
-
-    override fun onReceiveData(dat: ByteArray?) {
-
-        mDataParser!!.add(dat!!, viewDataBinding?.deviceList?.selectedItem.toString())
-    }
-
-    override fun onServicesDiscovered() {
-//        llChangeName.setVisibility(if (mBleControl!!.isChangeNameAvailable()) View.VISIBLE else View.GONE)
-    }
-
-    override fun onScanStop() {
-        mSearchDialog!!.stopSearch()
-    }
-
-    @SuppressLint("MissingPermission")
-    override fun onFoundDevice(device: BluetoothDevice?) {
-        if (!mBtDevices.contains(device) && device?.name != null) {
-            mBtDevices.add(device!!)
-            mBtDevicesAdapter!!.notifyDataSetChanged()
-        }
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         mDataParser!!.stop()
-        context?.let { mBleControl!!.unbindService(it) }
-        System.exit(0)
+
     }
 
     override fun onResume() {
         super.onResume()
-        context?.let { mBleControl!!.registerBtReceiver(it) }
+
     }
 
     override fun onPause() {
         super.onPause()
-        context?.let { mBleControl!!.unregisterBtReceiver(it) }
     }
 
     fun askPermission() {
@@ -878,7 +858,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             var permissionlistener = object : PermissionListener {
                 override fun onPermissionGranted() {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-
+                        BleManager.enableBluetooth(activity, 12530);
                     }
                 }
 
@@ -901,12 +881,14 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         Manifest.permission.BLUETOOTH_CONNECT,
                     )
                     .check()
+            }else{
+                BleManager.enableBluetooth(activity, 12530);
             }
         } else {
             var permissionlistener = object : PermissionListener {
                 override fun onPermissionGranted() {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-
+                        BleManager.enableBluetooth(activity, 12530);
                     }
                 }
 
@@ -932,6 +914,8 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         Manifest.permission.ACCESS_FINE_LOCATION,
                     )
                     .check()
+            }else{
+                BleManager.enableBluetooth(activity, 12530);
             }
         }
     }
@@ -952,12 +936,13 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     }
 
 
-    fun ecgConnectivity(){
+    fun ecgConnectivity() {
         contecSdk = ContecSdk(context)
         contecSdk!!.init(false)
     }
+
     private val mConnectCallback = object : ConnectCallback {
-       override fun onConnectStatus(status: Int) {
+        override fun onConnectStatus(status: Int) {
             activity!!.runOnUiThread(java.lang.Runnable {
 
 
@@ -1024,13 +1009,13 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         override fun onFail(errorCode: Int) {
             activity!!.runOnUiThread(java.lang.Runnable {
                 if (contecSdk != null) {
-                    Log.e("MYBLE", "Get data timed out"+errorCode)
-                    contecSdk!!.disconnect()
+                    Log.e("MYBLE", "Get data timed out" + errorCode)
+                    disconnect()
 
-                isConnected = false
-                viewDataBinding?.btnRetry?.visibility = View.GONE
-                viewDataBinding?.btnReport?.visibility = View.GONE
-                viewDataBinding?.btnSend?.text = "Search Device"
+                    isConnected = false
+                    viewDataBinding?.btnRetry?.visibility = View.GONE
+                    viewDataBinding?.btnReport?.visibility = View.GONE
+                    viewDataBinding?.btnSend?.text = "Search Device"
 //                Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
                 }
             })
@@ -1046,7 +1031,10 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 "Data not available please take reading".toast()
                 if (isListen) {
                     if (null != contecSdk) {
-                        contecSdk!!.listenRemoteDevice(scanResults[0].device, listenRemoteDeviceCallback)
+                        contecSdk!!.listenRemoteDevice(
+                            scanResults[0].device,
+                            listenRemoteDeviceCallback
+                        )
                     }
                 }
             })
@@ -1059,7 +1047,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         override fun onData(ecgData: EcgData) {
             activity!!.runOnUiThread(java.lang.Runnable {
                 ecgDataArrayList.add(ecgData)
-                if(ecgDataArrayList.size==1) {
+                if (ecgDataArrayList.size == 1) {
                     val stringBuffer = StringBuffer()
                     Log.e(TAG, "currentCount = " + ecgData.currentCount)
                     Log.e(TAG, "size = " + ecgData.size)
@@ -1131,8 +1119,10 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
          */
         override fun onProgress(uploadCount: Int, currentCount: Int, progress: Int) {
             activity!!.runOnUiThread(java.lang.Runnable {
-              Log.e(TAG, "uploadCount = " + uploadCount + "   currentCount = " +
-                          currentCount + "   progress = " + progress);
+                Log.e(
+                    TAG, "uploadCount = " + uploadCount + "   currentCount = " +
+                            currentCount + "   progress = " + progress
+                );
 //                tvGetData.setText("current progress = $progress")
             })
         }
@@ -1143,13 +1133,14 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         override fun onDataComplete() {
             activity!!.runOnUiThread(java.lang.Runnable {
                 Log.e("MYLBL", "data received")
-//                btnEcgWave.setEnabled(true)
-//                contecSdk!!.disconnect()
-                contecSdk!!.deleteData(DeviceParameter.DataType.ALL,101,deleteDataCallback)
+                contecSdk!!.deleteData(DeviceParameter.DataType.ALL, 101, deleteDataCallback)
                 ecgDataArrayList.clear()
                 if (isListen) {
                     if (null != contecSdk) {
-                        contecSdk!!.listenRemoteDevice(scanResults[0].device, listenRemoteDeviceCallback)
+                        contecSdk!!.listenRemoteDevice(
+                            scanResults[0].device,
+                            listenRemoteDeviceCallback
+                        )
                     }
                 }
             })
@@ -1180,19 +1171,19 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         }
     }
 
-    var  deleteDataCallback : DeleteDataCallback = object : DeleteDataCallback {
+    var deleteDataCallback: DeleteDataCallback = object : DeleteDataCallback {
         override fun onFail(p0: Int) {
-//            contecSdk!!.disconnect()
+
 
         }
 
         override fun onSuccess() {
 
-//            contecSdk!!.disconnect()
 
         }
 
     }
+
     /**
      * 监听状态回调
      */
@@ -1207,6 +1198,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 }
             })
         }
+
     fun convertFormat(num: Int): String? {
         return if (num < 10) {
             "0$num"
@@ -1214,81 +1206,88 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             "" + num
         }
     }
+
     var searchCallback: BluetoothSearchCallback = object : BluetoothSearchCallback {
         @SuppressLint("MissingPermission")
         override fun onScanResult(result: ScanResult) {
             activity!!.runOnUiThread(java.lang.Runnable {
                 val device = result.device
-                if(device.name.contains("PM10")){
-                val record = result.scanRecord!!.bytes
+                if (device.name.contains("PM10")) {
+                    val record = result.scanRecord!!.bytes
 
-                Log.e(TAG, "BYTE = " + Utils.bytesToHexString(record))
-                var manufactorSpecificString: String? = ""
-                if (record != null) {
-                    val manufactorSpecificBytes: ByteArray? = getManufacturerSpecificData(record)
-                    if (manufactorSpecificBytes != null) {
-                        manufactorSpecificString = String(manufactorSpecificBytes)
+                    Log.e(TAG, "BYTE = " + Utils.bytesToHexString(record))
+                    var manufactorSpecificString: String? = ""
+                    if (record != null) {
+                        val manufactorSpecificBytes: ByteArray? =
+                            getManufacturerSpecificData(record)
+                        if (manufactorSpecificBytes != null) {
+                            manufactorSpecificString = String(manufactorSpecificBytes)
+                        }
                     }
-                }
-                Log.e(TAG, device.name)
-                Log.e(TAG, String(record!!))
-                Log.e(TAG, manufactorSpecificString!!)
-                val stringBuffer = StringBuffer()
-                if (device.type == BluetoothDevice.DEVICE_TYPE_CLASSIC) {
-                    stringBuffer.append(device.name + "(classic)" + "bluetooth" + "\n")
-                } else if (device.type == BluetoothDevice.DEVICE_TYPE_DUAL) {
-                    stringBuffer.append(device.name + "(dual)" + "bluetooth" + "\n")
-                } else if (device.type == BluetoothDevice.DEVICE_TYPE_LE) {
-                    stringBuffer.append(device.name + "(ble)" + "bluetooth" + "\n")
-                }
-                if (manufactorSpecificString != null) {
-                    if (manufactorSpecificString.contains("DT") && manufactorSpecificString.contains(
-                            "DATA"
-                        )
-                    ) {
-                        val index = manufactorSpecificString.indexOf("DT")
-                        val date = manufactorSpecificString.substring(index + 2, index + 8)
-                        stringBuffer.append(
-                            manufactorSpecificString + "\n"
-                                    + "有数据, " + "当前时间为" + date
-                        )
-                    } else if (manufactorSpecificString.contains("DT")) {
-                        val index = manufactorSpecificString.indexOf("DT")
-                        val date = manufactorSpecificString.substring(index + 2, index + 8)
-                        stringBuffer.append(
-                            manufactorSpecificString + "\n"
-                                    + "没有数据, " + "当前时间为" + date
-                        )
-                    } else if (manufactorSpecificString.contains("DATA")) {
-                        stringBuffer.append(
-                            (manufactorSpecificString + "\n"
-                                    + "有数据，没有时间")
-                        )
+                    Log.e(TAG, device.name)
+                    Log.e(TAG, String(record!!))
+                    Log.e(TAG, manufactorSpecificString!!)
+                    val stringBuffer = StringBuffer()
+                    if (device.type == BluetoothDevice.DEVICE_TYPE_CLASSIC) {
+                        stringBuffer.append(device.name + "(classic)" + "bluetooth" + "\n")
+                    } else if (device.type == BluetoothDevice.DEVICE_TYPE_DUAL) {
+                        stringBuffer.append(device.name + "(dual)" + "bluetooth" + "\n")
+                    } else if (device.type == BluetoothDevice.DEVICE_TYPE_LE) {
+                        stringBuffer.append(device.name + "(ble)" + "bluetooth" + "\n")
                     }
-                }
-                if (result != null) {
+                    if (manufactorSpecificString != null) {
+                        if (manufactorSpecificString.contains("DT") && manufactorSpecificString.contains(
+                                "DATA"
+                            )
+                        ) {
+                            val index = manufactorSpecificString.indexOf("DT")
+                            val date = manufactorSpecificString.substring(index + 2, index + 8)
+                            stringBuffer.append(
+                                manufactorSpecificString + "\n"
+                                        + "有数据, " + "当前时间为" + date
+                            )
+                        } else if (manufactorSpecificString.contains("DT")) {
+                            val index = manufactorSpecificString.indexOf("DT")
+                            val date = manufactorSpecificString.substring(index + 2, index + 8)
+                            stringBuffer.append(
+                                manufactorSpecificString + "\n"
+                                        + "没有数据, " + "当前时间为" + date
+                            )
+                        } else if (manufactorSpecificString.contains("DATA")) {
+                            stringBuffer.append(
+                                (manufactorSpecificString + "\n"
+                                        + "有数据，没有时间")
+                            )
+                        }
+                    }
+                    if (result != null) {
 
-                    val indexQuery =
-                        scanResults.indexOfFirst { it.device.address == result.device.address }
-                    if (indexQuery != -1) {
-                        scanResults[indexQuery] = result
-                        deviceSearchAdapter?.notifyItemChanged(indexQuery)
-                    } else {
-                        if ((viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer) && result.device.name!=null && result.device.name.contains(Const.Thermometer)) || !viewDataBinding?.deviceList?.selectedItem.toString().equals(Const.Thermometer)) {
+                        val indexQuery =
+                            scanResults.indexOfFirst { it.device.address == result.device.address }
+                        if (indexQuery != -1) {
+                            scanResults[indexQuery] = result
+                            deviceSearchAdapter?.notifyItemChanged(indexQuery)
+                        } else {
+                            if ((device.toString()
+                                    .equals(Const.Thermometer) && result.device.name != null && result.device.name.contains(
+                                    Const.Thermometer
+                                )) || !device.toString().equals(Const.Thermometer)
+                            ) {
 
-                            scanResults.add(result)
-                            scanResults.sortByDescending { it.rssi }
-                            val predicate = Predicate { x: ScanResult -> x.device.name == null }
-                            removeItems(scanResults, predicate)
+                                scanResults.add(result)
+                                scanResults.sortByDescending { it.rssi }
+                                val predicate = Predicate { x: ScanResult -> x.device.name == null }
+                                removeItems(scanResults, predicate)
+                            }
+                        }
+                        if (!isConnected && scanResults.size == 1) {
+                            deviceSearchAdapter?.notifyItemChanged(indexQuery)
+                            connect(0)
                         }
                     }
                 }
-                }}
-                //                    LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getApplicationContext());
-                //                    deviceSearchAdapter = new DeviceSearchAdapter(getApplicationContext(), searchDeviceList);
-                //
-                //                    recyclerView.setLayoutManager(linearLayoutManager);
-                //                    recyclerView.setAdapter(deviceSearchAdapter);
+
+            }
             )
 
         }

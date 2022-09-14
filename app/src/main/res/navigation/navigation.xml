@@ -7,8 +7,8 @@
         android:name="com.ipath.hospitaldevice.ui.patient.PatientFragment"
         android:label="fragment_my_home"
         tools:layout="@layout/patient_details_fragment">
-        <action android:id="@+id/action_mainFragment_to_patientFragment"
-            app:destination="@id/patientFragment"
+        <action android:id="@+id/action_mainFragment_to_deviceListFragment"
+            app:destination="@id/deviceListFragment"
             app:enterAnim="@anim/anim_slide_in_right"
             app:exitAnim="@anim/anim_slide_out_left"
             app:popEnterAnim="@anim/anim_slide_in_left"
@@ -53,6 +53,8 @@
             app:enterAnim="@anim/anim_slide_in_right"
             app:exitAnim="@anim/anim_slide_out_left"
             app:popEnterAnim="@anim/anim_slide_in_left"
+            app:popUpTo="@+id/mainFragment"
+            app:popUpToInclusive="true"
             app:popExitAnim="@anim/anim_slide_out_right">
             <argument
                 android:name="pname"
@@ -69,15 +71,42 @@
     <fragment android:id="@+id/reportFragment"
         android:name="com.ipath.hospitaldevice.ui.patientreport.ReportFragment"
         android:label="fragment_my_second"
-        tools:layout="@layout/search_fragment">
+        tools:layout="@layout/report_fragment">
         <action android:id="@+id/action_reportFragment_to_mainFragment"
             app:destination="@id/mainFragment"
             app:enterAnim="@anim/anim_slide_in_right"
             app:exitAnim="@anim/anim_slide_out_left"
             app:popEnterAnim="@anim/anim_slide_in_left"
-            app:popExitAnim="@anim/anim_slide_out_right">
+            app:popExitAnim="@anim/anim_slide_out_right"
+            app:popUpTo="@+id/mainFragment"
+            app:popUpToInclusive="true"
+            >
 
         </action>
+    </fragment>
+
+    <fragment android:id="@+id/deviceListFragment"
+        android:name="com.ipath.hospitaldevice.ui.device.DeviceFragment"
+        android:label="fragment_my_second"
+        tools:layout="@layout/device_fragment">
+        <action android:id="@+id/action_device_to_patientFragment"
+            app:destination="@id/patientFragment"
+            app:enterAnim="@anim/anim_slide_in_right"
+            app:exitAnim="@anim/anim_slide_out_left"
+            app:popEnterAnim="@anim/anim_slide_in_left"
+            app:popExitAnim="@anim/anim_slide_out_right">
+            <argument
+                android:name="pname"
+                app:argType="string"
+                />
+            <argument
+                android:name="mobile"
+                app:argType="string" />
+            <argument
+                android:name="email"
+                app:argType="string" />
+        </action>
+
     </fragment>
 
 

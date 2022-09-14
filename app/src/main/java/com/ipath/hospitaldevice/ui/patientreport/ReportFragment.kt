@@ -1,54 +1,29 @@
 package com.ipath.hospitaldevice.ui.patientreport
 
 
-import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
-import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.DialogInterface
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.location.LocationManager
-import android.os.Build
-import android.os.Bundle
-import android.os.ParcelUuid
-import android.provider.Settings
 import android.util.Log
-import android.widget.ArrayAdapter
-import android.widget.Toast
+import android.view.View
 import androidx.activity.result.ActivityResult
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.core.util.Predicate
 import androidx.databinding.library.baseAdapters.BR
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.SimpleItemAnimator
-import com.berry_med.spo2_ble.data.Const
 import com.ipath.hospitaldevice.R
 import com.ipath.hospitaldevice.base.BaseFragment
-import com.ipath.hospitaldevice.ble.BleController
-import com.ipath.hospitaldevice.ble.adapter.DeviceListAdapter
-import com.ipath.hospitaldevice.ble.adapter.SearchDevicesDialog
-import com.ipath.hospitaldevice.ble.data.DataParser
 import com.ipath.hospitaldevice.databinding.ReportFragmentBinding
-import com.ipath.hospitaldevice.databinding.SearchFragmentBinding
 import com.ipath.hospitaldevice.ui.adapter.DeviceSearchAdapter
+import com.ipath.hospitaldevice.utils.Utils.SetupHtmlView
+import com.ipath.hospitaldevice.utils.Utils.SetupView
 import kotlinx.coroutines.*
+import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.exitProcess
 
@@ -99,8 +74,13 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
     }
 
     override fun setupUI() {
-        setupTitle(getString(R.string.searchdetails))
-        setupBackButtonEnable(true,false)
+        setupTitle(getString(R.string.result))
+        setupBackButtonEnable(true, object : View.OnClickListener {
+            override fun onClick(v: View?) {
+
+            }
+
+        })
         val arg = arguments?.getString("pname")
         val email = arguments?.getString("email")
         val mobile = arguments?.getString("mobile")
@@ -114,39 +94,84 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
         val mmHgHigh = arguments?.getString("mmHgHigh")
         val mmHgLow = arguments?.getString("mmHgLow")
         val beatBp = arguments?.getString("beatBp")
+        val color = arguments?.getInt("color")
+        val color2 = arguments?.getInt("color2")
+        val color3 = arguments?.getInt("color3")
 
 
         viewDataBinding?.pName?.text = arg
         viewDataBinding?.pMobile?.text = mobile
         viewDataBinding?.pEmail?.text = email
-        if(!sp02.isNullOrEmpty()) {
+        val c = Calendar.getInstance().time
+//        println("Current time => $c")
+
+        val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss", Locale.getDefault())
+        val formattedDate: String = df.format(c)
+        viewDataBinding?.pDate?.text=formattedDate;
+        if (!sp02.isNullOrEmpty()) {
             viewDataBinding?.pResult?.setText(
-                "SpO2: " + sp02
-                    .toString() + "   Pulse Rate:" + beat
+
+                    SetupHtmlView(
+                        SetupView(
+                            "SpO2: " + sp02.toString(),
+                            Integer.toHexString(color!!)
+                        ) + "  <br>" + SetupView("Pulse Rate: " + beat, Integer.toHexString(color2!!))
+                    )
             )
-        }else if(!GluecosedL.isNullOrEmpty()) {
+        } else if (!GluecosedL.isNullOrEmpty()) {
             viewDataBinding?.pResult?.setText(
-                "mg/dL: " + (GluecosedL)
-                    .toString() + "   mmol/L: " + (GluecosedLmmolLvalue).toString()
+
+                    SetupHtmlView(
+                        SetupView(
+                            "mg/dL: " + (GluecosedL).toString(),
+                            Integer.toHexString(color!!)
+                        ) + "  <br>" + SetupView(
+                            "mmol/L: " + (GluecosedLmmolLvalue).toString(),
+                            Integer.toHexString(color2!!)
+                        )
+                    )
+
+
             )
 
-        }else if(!Celcius.isNullOrEmpty()) {
+        } else if (!Celcius.isNullOrEmpty()) {
             viewDataBinding?.pResult?.setText(
-                (Celcius)
-                    .toString() + " °C" + "  " + (Fahrenheit).toString() + " °F"
+                SetupHtmlView(
+                    SetupView(
+                        (Celcius).toString() + " °C ",
+                        Integer.toHexString(color!!)
+                    ) + "  <br>" + SetupView(
+                        (Fahrenheit).toString() + " °F ",
+                        Integer.toHexString(color2!!)
+                    )
+                )
             )
 
-        }else if(!mmHgHigh.isNullOrEmpty()) {
+        } else if (!mmHgHigh.isNullOrEmpty()) {
             viewDataBinding?.pResult?.setText(
-                (mmHgHigh)
-                    .toString() + " mmHg" + "  " + (mmHgLow).toString() + " mmHg  "+ (beatBp).toString()+" BPM"
+                SetupHtmlView(
+                    SetupView(
+                        (mmHgHigh).toString() + " mmHg ",
+                        Integer.toHexString(color!!)
+                    ) + "  <br>" + SetupView(
+                        (mmHgLow).toString() + " mmHg  ",
+                        Integer.toHexString(color2!!)
+                    ) + "  <br>" + SetupView(
+                        (beatBp).toString() + " BPM",
+                        Integer.toHexString(color3!!)
+                    )
+                )
             )
 
-        }else{
+        } else {
             viewDataBinding?.pResult?.setText(
                 ECGDataREcord
             )
         }
+//        if (color != null) {
+//            viewDataBinding?.pResult?.setBackgroundColor(color)
+//        }
+
         viewDataBinding?.btnNewTest?.setOnClickListener {
             findNavController().navigate(ReportFragmentDirections.actionReportFragmentToMainFragment())
         }
@@ -161,8 +186,8 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
 
         viewDataBinding?.btnSendReport?.setOnClickListener {
             val builder = context?.let { it1 -> AlertDialog.Builder(it1) }
-            builder?.setTitle("Androidly Alert")
-            builder?.setMessage("We have a message")
+            builder?.setTitle("Data Sync")
+            builder?.setMessage("Uploaded Successfully!!")
             val alertDialog = builder?.create()
             builder?.setPositiveButton(
                 "OK",
@@ -186,6 +211,8 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
     override fun onEventClicked() {
 //        findNavController().navigate(WelcomeFragmentDirections.Fragment_to_patientFragment)
     }
+
+
 
 
 }

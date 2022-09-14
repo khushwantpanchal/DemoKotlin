@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/tools"
     android:id="@+id/ll_device_search"
     style="@style/centreLocatorCardDesign"
-    android:layout_height="@dimen/_40mdp"
+    android:layout_height="@dimen/_70mdp"
     android:layout_width="match_parent"
     app:cardCornerRadius="16dp"
     app:cardElevation="10dp"
@@ -12,11 +12,12 @@
     <RelativeLayout
         android:id="@+id/RelativeLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_marginLeft="20dp"
         android:gravity="center"
         android:layout_marginRight="20dp"
         android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
         >
 
         <TextView
@@ -26,6 +27,7 @@
             android:layout_alignParentLeft="true"
             android:layout_centerVertical="true"
             android:text=""
+            android:textStyle="bold"
             android:textSize="16sp" />
 
     </RelativeLayout>

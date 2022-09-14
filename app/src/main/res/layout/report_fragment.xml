@@ -40,9 +40,9 @@
                     android:id="@+id/lblName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/patientname"
-                    android:textStyle="bold"
                     android:layout_margin="@dimen/_10mdp"
+                    android:text="@string/patientname"
+
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -52,39 +52,37 @@
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="@dimen/_10mdp"
                     android:text="@string/patientname"
-                    android:layout_margin="@dimen/_10mdp"
-                    app:layout_constraintStart_toEndOf="@+id/lblName"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/lblName" />
 
                 <TextView
                     android:id="@+id/lblMobile"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/mobno"
                     android:layout_margin="@dimen/_10mdp"
-                    android:textStyle="bold"
+                    android:text="@string/mobno"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/lblName" />
+                    app:layout_constraintTop_toBottomOf="@+id/pName" />
 
                 <TextView
                     android:id="@+id/pMobile"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="@dimen/_10mdp"
+                    android:layout_marginLeft="@dimen/_10mdp"
+                    android:textStyle="bold"
                     android:text="@string/patientname"
-                    app:layout_constraintStart_toEndOf="@+id/lblName"
-                    app:layout_constraintTop_toBottomOf="@+id/lblName" />
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/lblMobile" />
 
                 <TextView
                     android:id="@+id/lblEmail"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/email"
-                    android:textStyle="bold"
-
                     android:layout_margin="@dimen/_10mdp"
+                    android:text="@string/email"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/lblMobile" />
+                    app:layout_constraintTop_toBottomOf="@+id/pMobile" />
 
                 <TextView
                     android:id="@+id/pEmail"
@@ -92,33 +90,51 @@
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="@dimen/_10mdp"
                     android:text="@string/patientname"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/lblEmail" />
+                <TextView
+                    android:id="@+id/lblDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_margin="@dimen/_10mdp"
-                    app:layout_constraintStart_toEndOf="@+id/lblName"
-                    app:layout_constraintTop_toBottomOf="@+id/lblMobile" />
-  <TextView
+                    android:text="@string/date"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/pEmail" />
+
+                <TextView
+                    android:id="@+id/pDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="@dimen/_10mdp"
+                    android:text="@string/patientname"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/lblDate" />
+
+                <TextView
                     android:id="@+id/lblResult"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/_10mdp"
                     android:text="@string/Result"
-                    android:textStyle="bold"
-      android:layout_margin="@dimen/_10mdp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/pEmail" />
+                    app:layout_constraintTop_toBottomOf="@+id/pDate" />
 
                 <TextView
                     android:id="@+id/pResult"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="@dimen/_10mdp"
+                    android:textStyle="bold"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toEndOf="@+id/lblName"
-                    app:layout_constraintTop_toBottomOf="@+id/pEmail" />
+                    app:layout_constraintStart_toStartOf="@+id/lblResult"
+                    app:layout_constraintTop_toBottomOf="@+id/lblResult" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/_350mdp"
-                   android:gravity="center"
-                    android:layout_marginTop="@dimen/_10sdp"
+                    android:gravity="center_horizontal"
+                    android:layout_marginTop="@dimen/_40mdp"
                     android:orientation="vertical"
                     app:layout_constraintTop_toBottomOf="@+id/pResult"
                     tools:layout_editor_absoluteX="20dp">
@@ -131,9 +147,9 @@
                         android:layout_marginVertical="@dimen/_10mdp"
                         android:layout_marginTop="@dimen/_10mdp"
                         android:background="@drawable/centre_button"
-                        android:text="@string/SendReport"
-                        android:enabled="false"
                         android:backgroundTint="@color/brown"
+                        android:enabled="true"
+                        android:text="@string/SendReport"
                         android:textColor="@color/white"
                         app:layout_constraintEnd_toStartOf="@+id/btnNewTest"
                         app:layout_constraintStart_toStartOf="parent"
@@ -181,8 +197,6 @@
                         app:layout_constraintStart_toEndOf="@+id/btnSendReport"
                         app:layout_constraintTop_toBottomOf="@+id/btnNewTest" />
                 </LinearLayout>
-
-
 
 
                 <!--                android:onClick="@{()->patientVM.navigator.onClicked()}"-->

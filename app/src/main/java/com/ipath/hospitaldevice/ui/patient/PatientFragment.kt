@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.text.TextUtils
 import android.util.Patterns.EMAIL_ADDRESS
 import android.util.Patterns.PHONE
-import androidx.core.os.bundleOf
+import android.view.View
 import androidx.databinding.library.baseAdapters.BR
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -39,7 +39,12 @@ class PatientFragment : BaseFragment<PatientDetailsFragmentBinding, PatientVM>()
 //        sdk = ContecSdk(context)
 //        sdk!!.init(false)
         setupTitle(getString(R.string.patient_details))
-        setupBackButtonEnable(false,false)
+        setupBackButtonEnable(false,object : View.OnClickListener{
+            override fun onClick(v: View?) {
+
+            }
+
+        })
     }
 
     override fun setupObserver() {
@@ -60,7 +65,7 @@ class PatientFragment : BaseFragment<PatientDetailsFragmentBinding, PatientVM>()
             bundle.putString("pname", viewDataBinding?.txtName?.text.toString())
             bundle.putString("email", viewDataBinding?.txtEmail?.text.toString())
             bundle.putString("mobile", viewDataBinding?.txtMob?.text.toString())
-            findNavController().navigate(R.id.action_mainFragment_to_patientFragment,bundle);
+            findNavController().navigate(R.id.action_mainFragment_to_deviceListFragment,bundle);
         }
     }
 

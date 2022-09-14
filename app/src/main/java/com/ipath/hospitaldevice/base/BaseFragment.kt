@@ -1,20 +1,24 @@
 package com.ipath.hospitaldevice.base
 
-import android.opengl.Visibility
 import android.os.Bundle
+import android.service.autofill.OnClickAction
+import android.text.style.ClickableSpan
 import android.util.Log
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AutoCompleteTextView
 import android.widget.ImageView
 import androidx.annotation.LayoutRes
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
+import butterknife.OnClick
 import com.ipath.hospitaldevice.R
-import com.ipath.hospitaldevice.ui.patient.PatientFragmentDirections
 
 abstract class BaseFragment<T : ViewDataBinding, V : BaseViewModel<*>> : Fragment(),
     FragmentListener {
@@ -43,30 +47,48 @@ abstract class BaseFragment<T : ViewDataBinding, V : BaseViewModel<*>> : Fragmen
     abstract fun setupUI()
     abstract fun setupObserver()
     fun setupTitle(title: String) {
-        Log.e("mylog", "onCreate: 2", )
-        (activity as BaseActivity).mBinding?.txtTitleHome?.text=title
+        Log.e("mylog", "onCreate: 2")
+        (activity as BaseActivity).mBinding?.txtTitleHome?.text = title
     }
 
-    fun setupBackButtonEnable(isEnable: Boolean,islastscreen: Boolean) {
+    init {
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
+            val viewLifecycleOwnerLiveDataObserver =
+                Observer<LifecycleOwner?> {
+                    val viewLifecycleOwner = it ?: return@Observer
 
-        if (islastscreen) {
-            (activity as BaseActivity).mBinding?.imgBack?.visibility=View.VISIBLE
-            (activity as BaseActivity).mBinding?.imgBack?.setOnClickListener {
-                Log.e("mylog", "click back", )
-                this.findNavController().navigate(R.id.mainFragment)
+                    viewLifecycleOwner.lifecycle.addObserver(object : DefaultLifecycleObserver {
+                        override fun onDestroy(owner: LifecycleOwner) {
+                            viewDataBinding = null
+                        }
+                    })
+                }
 
+            override fun onCreate(owner: LifecycleOwner) {
+                viewLifecycleOwnerLiveData.observeForever(viewLifecycleOwnerLiveDataObserver)
             }
-        }else if (isEnable) {
-            (activity as BaseActivity).mBinding?.imgBack?.visibility=View.VISIBLE
+
+            override fun onDestroy(owner: LifecycleOwner) {
+                viewLifecycleOwnerLiveData.removeObserver(viewLifecycleOwnerLiveDataObserver)
+            }
+        })
+    }
+
+    fun setupBackButtonEnable(isEnable: Boolean,clickableSpan: View.OnClickListener) {
+
+        if (isEnable) {
+            (activity as BaseActivity).mBinding?.imgBack?.visibility = View.VISIBLE
             (activity as BaseActivity).mBinding?.imgBack?.setOnClickListener {
-                Log.e("mylog", "click back", )
+                Log.e("mylog", "click back")
+                clickableSpan.onClick((activity as BaseActivity).mBinding?.imgBack)
                 this.findNavController().popBackStack()
 
             }
-        }else{
-            (activity as BaseActivity).findViewById<ImageView>(R.id.imgBack).visibility=View.GONE
+        } else {
+            (activity as BaseActivity).findViewById<ImageView>(R.id.imgBack).visibility = View.GONE
         }
     }
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -91,6 +113,10 @@ abstract class BaseFragment<T : ViewDataBinding, V : BaseViewModel<*>> : Fragmen
         setupToolBar()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        viewDataBinding?.unbind()
+    }
 }
 
 interface FragmentListener {

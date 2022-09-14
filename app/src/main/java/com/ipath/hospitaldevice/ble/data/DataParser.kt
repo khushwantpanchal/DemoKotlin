@@ -1,5 +1,6 @@
 package com.ipath.hospitaldevice.ble.data
 
+import android.graphics.Color
 import android.util.Log
 import com.berry_med.spo2_ble.data.Const
 import java.util.*
@@ -15,7 +16,7 @@ class DataParser     //Constructor
 
     //Buffer queue
     private var bufferQueue = ByteArray(10)
-    private var ecgData :String=""
+    private var ecgData: String = ""
     private var type: String = ""
 
     //Parse Runnable
@@ -50,7 +51,7 @@ class DataParser     //Constructor
         lateinit var packageData: IntArray
         override fun run() {
             while (isStop) {
-                if(DataUpdated) {
+                if (DataUpdated) {
                     dat = data
                     if (type.equals(Const.Oximeter)) {
                         packageData = IntArray(10)
@@ -59,10 +60,25 @@ class DataParser     //Constructor
                         val pulseRate = dat[6]
                         val pi = dat[8] / 10
                         if (spo2 >= 35 && spo2 <= 100 && pulseRate <= 220) {
-                            mOxiParams.update(spo2.toInt(), pulseRate.toInt(), pi, 0, 0.0, 0.0,"","","","")
+                            mOxiParams.update(
+                                spo2.toInt(),
+                                pulseRate.toInt(),
+                                pi,
+                                0,
+                                0.0,
+                                0.0,
+                                "",
+                                "",
+                                "",
+                                "",
+                                ColorValueSp02(spo2.toInt()),
+                                ColorValuepulseRate(pulseRate.toInt()),
+                                Color.WHITE,
+                            )
+
                             mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         }
-                        DataUpdated=false
+                        DataUpdated = false
                     } else if (type.equals(Const.Glucometer)) {
                         packageData = IntArray(8)
                         val hi = dat[4]
@@ -76,10 +92,24 @@ class DataParser     //Constructor
                         Log.e("MybLe", lownumberdecimal.toString())
                         val glucoseMeasurement = lownumberdecimal + hinumberdecimal;
                         if (glucoseMeasurement > 0) {
-                            mOxiParams.update(0, 0, 0, glucoseMeasurement, 0.0, 0.0,"","","","")
+                            mOxiParams.update(
+                                0,
+                                0,
+                                0,
+                                glucoseMeasurement,
+                                0.0,
+                                0.0,
+                                "",
+                                "",
+                                "",
+                                "",
+                                Color.WHITE,
+                                Color.WHITE,
+                                Color.WHITE
+                            )
                             mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         }
-                        DataUpdated=false
+                        DataUpdated = false
                     } else if (type.equals(Const.Thermometer)) {
                         packageData = IntArray(7)
                         val last = dat[4]
@@ -104,7 +134,11 @@ class DataParser     //Constructor
                                     0,
                                     0,
                                     Celcius.toDouble(),
-                                    Fahrenheit.toDouble(),"","","","")
+                                    Fahrenheit.toDouble(), "", "", "", "",
+                                    ColorValueTemp(Celcius),
+                                    ColorValueTemp(Celcius),
+                                    Color.WHITE,
+                                )
                                 mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                             }
                         } else {
@@ -117,12 +151,16 @@ class DataParser     //Constructor
                                     0,
                                     0,
                                     Celcius.toDouble(),
-                                    Fahrenheit.toDouble(),"","","","")
+                                    Fahrenheit.toDouble(), "", "", "", "",
+                                    ColorValueTemp(Celcius),
+                                    ColorValueTemp(Celcius),
+                                    Color.WHITE,
+                                )
                                 mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                             }
                         }
-                        DataUpdated=false
-                    }else if (type.equals(Const.ECG)) {
+                        DataUpdated = false
+                    } else if (type.equals(Const.ECG)) {
 
 //                        Log.e("MybLe", hexString.toString())
 
@@ -132,10 +170,14 @@ class DataParser     //Constructor
                             0,
                             0,
                             0.0,
-                            0.0,ecgData,"","","")
+                            0.0, ecgData, "", "", "",
+                            Color.WHITE,
+                            Color.WHITE,
+                            Color.WHITE,
+                        )
                         mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
-                        DataUpdated=false
-                    }else if (type.equals(Const.MedicinePillBox)) {
+                        DataUpdated = false
+                    } else if (type.equals(Const.MedicinePillBox)) {
 
 //                        Log.e("MybLe", hexString.toString())
 
@@ -145,10 +187,14 @@ class DataParser     //Constructor
                             0,
                             0,
                             0.0,
-                            0.0,ecgData,"","","")
+                            0.0, ecgData, "", "", "",
+                            Color.WHITE,
+                            Color.WHITE,
+                            Color.WHITE,
+                        )
                         mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
-                        DataUpdated=false
-                    }else if (type.equals(Const.BloodPressure)) {
+                        DataUpdated = false
+                    } else if (type.equals(Const.BloodPressure)) {
 
 //                        Log.e("MybLe", hexString.toString())
 
@@ -158,9 +204,17 @@ class DataParser     //Constructor
                             0,
                             0,
                             0.0,
-                            0.0,ecgData,dat[3].toString(),dat[4].toString(),dat[5].toString())
+                            0.0,
+                            ecgData,
+                            dat[3].toString(),
+                            dat[4].toString(),
+                            dat[5].toString(),
+                            Color.WHITE,
+                            Color.WHITE,
+                            Color.WHITE,
+                        )
                         mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
-                        DataUpdated=false
+                        DataUpdated = false
                     }
                 }
             }
@@ -175,7 +229,7 @@ class DataParser     //Constructor
         try {
             bufferQueue = dat
             this.type = type
-            DataUpdated=true
+            DataUpdated = true
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
@@ -189,7 +243,7 @@ class DataParser     //Constructor
         try {
             ecgData = dat
             this.type = type
-            DataUpdated=true
+            DataUpdated = true
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
@@ -254,7 +308,32 @@ class DataParser     //Constructor
                 = ""
             private set
 
-        fun update(spo2: Int, pulseRate: Int, pi: Int, mmolLvalue: Int, Celcius: Double, Fahrenheit: Double,ecgData:String,mmHgHigh:String,mmHgLow:String,beat:String) {
+        var color: Int//perfusion index
+                = Color.WHITE
+            private set
+        var color2: Int//perfusion index
+                = Color.WHITE
+            private set
+
+        var color3: Int//perfusion index
+                = Color.WHITE
+            private set
+
+        fun update(
+            spo2: Int,
+            pulseRate: Int,
+            pi: Int,
+            mmolLvalue: Int,
+            Celcius: Double,
+            Fahrenheit: Double,
+            ecgData: String,
+            mmHgHigh: String,
+            mmHgLow: String,
+            beat: String,
+            color: Int,
+            color2: Int,
+            color3: Int
+        ) {
             this.spo2 = spo2
             this.pulseRate = pulseRate
             this.pi = pi
@@ -265,6 +344,45 @@ class DataParser     //Constructor
             this.mmHgHigh = mmHgHigh
             this.mmHgLow = mmHgLow
             this.beat = beat
+            this.color = color
+            this.color2 = color2
+            this.color3 = color3
+        }
+    }
+
+    fun ColorValueSp02(spo2: Int): Int {
+        if (spo2 <= 92 ) {
+            return Color.RED
+        } else if ((spo2 == 93 || spo2 == 94) ) {
+            return Color.YELLOW
+        } else if (spo2 == 95 ) {
+            return Color.GREEN
+        } else {
+            return Color.WHITE
+        }
+    }
+
+    fun ColorValuepulseRate( pulseRate: Int): Int {
+        if ( pulseRate > 130) {
+            return Color.RED
+        } else if ( pulseRate > 109 && pulseRate < 131) {
+            return Color.YELLOW
+        } else if ( (pulseRate > 100 && pulseRate < 110)) {
+            return Color.GREEN
+        } else {
+            return Color.WHITE
+        }
+    }
+
+    fun ColorValueTemp(temp: Double): Int {
+        if (temp >= 39) {
+            return Color.RED
+        } else if (temp >= 38.1 && temp < 39) {
+            return Color.YELLOW
+        } else if (temp < 38.1 && temp > 37.5) {
+            return Color.GREEN
+        } else {
+            return Color.WHITE
         }
     }
 }

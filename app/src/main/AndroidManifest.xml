@@ -5,21 +5,11 @@
 
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-
-    <uses-permission
-        android:name="android.permission.BLUETOOTH"
-         />
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_ADMIN"
-        />
-
-    <!-- These 2 bellow, only if you are targeting Android 12+ -->
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"
-        tools:targetApi="s" />
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_SCAN"
-        android:usesPermissionFlags="neverForLocation"
-        tools:targetApi="s" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <!--From Android 12-->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
 
     <!-- These 2 bellow, only if you are targeting Android 10+ -->
@@ -37,7 +27,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HospitalDevice">
         <activity
-            android:name=".base.BaseActivity"
+            android:name=".screen.SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -45,6 +35,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".base.BaseActivity"
+            android:exported="true"/>
+        <activity
+            android:name=".screen.LoginActivity"
+            android:exported="true"/>
         <service android:name=".ble.BluetoothLeService" android:enabled="true"/>
     </application>
 
