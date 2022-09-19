@@ -499,7 +499,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             viewDataBinding?.btnReport?.visibility = View.GONE
             viewDataBinding?.tvStatus?.text = ""
             viewDataBinding?.tvParams?.text = ""
-            Toast.makeText(context, "Disconnected", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context!!, "Disconnected", Toast.LENGTH_SHORT).show()
             viewDataBinding?.btnSend?.setText("Search")
 
         }
@@ -532,7 +532,15 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                     if ((device.toString()
                             .equals(Const.Thermometer) && result.device.name != null && result.device.name.contains(
                             Const.Thermometer
-                        )) || !device.toString().equals(Const.Thermometer)
+                        )) ||(device.toString()
+                            .equals(Const.Glucometer) && result.device.name != null && result.device.name.contains(
+                            Const.Glu
+                        ))||(device.toString()
+                            .equals(Const.BloodPressure) && result.device.name != null && result.device.name.contains(
+                            Const.BP
+                        )) || (!device.toString().equals(Const.Thermometer)&& !device.toString()
+                            .equals(Const.Glucometer)&&!device.toString()
+                            .equals(Const.BloodPressure))
                     ) {
 
                         scanResults.add(result)
