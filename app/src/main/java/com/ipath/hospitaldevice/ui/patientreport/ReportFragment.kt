@@ -97,6 +97,8 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
         val color = arguments?.getInt("color")
         val color2 = arguments?.getInt("color2")
         val color3 = arguments?.getInt("color3")
+        val isalarm = arguments?.getBoolean("setalarm",false)
+        val alarm = arguments?.getString("alarm")
 
 
         viewDataBinding?.pName?.text = arg
@@ -159,6 +161,16 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
                     ) + "  <br>" + SetupView(
                         (beatBp).toString() + " BPM",
                         Integer.toHexString(color3!!)
+                    )
+                )
+            )
+
+        }else if (isalarm == true) {
+            viewDataBinding?.pResult?.setText(
+                SetupHtmlView(
+                    SetupView(
+                        "Alarm Time: "+alarm ,
+                        Integer.toHexString(color!!)
                     )
                 )
             )

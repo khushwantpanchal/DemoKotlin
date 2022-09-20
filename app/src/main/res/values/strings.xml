@@ -24,7 +24,7 @@
         <item >Thermometer</item>
         <item >ECG</item>
         <item >Blood Pressure</item>
-<!--        <item >Medicine Pill Box</item>-->
+        <item >Medicine Pill Box</item>
     </string-array>
     <string name="rationale_title">Permission required</string>
     <string name="rationale_message">we need permission for find your <b>Bluetooth</b> </string>
@@ -39,5 +39,18 @@
     <string name="login">Login</string>
     <string name="ReportName">"Report Name: "</string>
     <string name="date">Date:</string>
+    <string name="configuration_parameter">Config Param</string>
+    <string name="state_parameter">State Param</string>
+    <string name="controls_parameter">Controls Param</string>
+    <string name="event_parameter">Event Param</string>
 
+    <string name="device_type">Device Type:</string>
+    <string name="firmware_version">Firmware Version:</string>
+    <string name="registration_type">Registration Type:</string>
+    <string name="request_parameter_is_empty_or_error">The request parameter is empty or filled in incorrectly！</string>
+    <string name="set_error">Set Error！Exception :</string>
+    <string name="device_disconnect">Device disconnect！</string>
+    <string name="forced_synchronization">Forced synchronization</string>
+    <string name="unforced_synchronization">Unforced synchronization</string>
+    <string name="alaram">Alarm</string>
 </resources>

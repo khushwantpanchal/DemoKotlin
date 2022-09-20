@@ -5,7 +5,7 @@
     <data>
         <variable
             name="dfragment"
-            type="com.ipath.hospitaldevice.ui.device.DeviceVM" />
+            type="com.ipath.hospitaldevice.ui.reportselection.ReportVM" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

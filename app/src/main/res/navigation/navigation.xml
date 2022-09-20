@@ -86,9 +86,9 @@
     </fragment>
 
     <fragment android:id="@+id/deviceListFragment"
-        android:name="com.ipath.hospitaldevice.ui.device.DeviceFragment"
+        android:name="com.ipath.hospitaldevice.ui.reportselection.ReportFragment"
         android:label="fragment_my_second"
-        tools:layout="@layout/device_fragment">
+        tools:layout="@layout/report_selection_fragment">
         <action android:id="@+id/action_device_to_patientFragment"
             app:destination="@id/patientFragment"
             app:enterAnim="@anim/anim_slide_in_right"

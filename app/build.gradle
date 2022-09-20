@@ -37,12 +37,6 @@ android {
     buildFeatures {
         dataBinding = true
     }
-
-    buildscript {
-        repositories {
-            maven { url 'https://jitpack.io' }
-        }
-    }
 }
 
 dependencies {
@@ -91,4 +85,6 @@ dependencies {
     implementation 'com.jakewharton:butterknife:10.2.3'
     kapt 'com.jakewharton:butterknife-compiler:10.2.3'
     implementation 'com.github.Ficat:EasyBle:v2.0.2'
+    implementation 'com.blakequ.androidblemanager:bluetooth-manager-lib:2.1.5'
+    implementation files('libs/zyt-bluetooth-sdk-v3.2.1-release.jar')
 }

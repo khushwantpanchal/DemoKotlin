@@ -1,58 +1,28 @@
-package com.ipath.hospitaldevice.ui
+package com.ocwvar.SDKTest
 
 import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
-import com.ocwvar.SDKTest.MyApplication
+
 import com.zayata.zayatabluetoothsdk.bluetooth.BluetoothManager
 import com.zayata.zayatabluetoothsdk.callback.OpenBleFailCallBack
 import com.zayata.zayatabluetoothsdk.callback.OpenBleSuccCallBack
-import dagger.hilt.android.HiltAndroidApp
 
-@HiltAndroidApp
-class App : Application() {
+/**
+ * [系统Application类，设置全局变量以及初始化组件]
+ * [System Application class, setting global variables and initializing components]
+ */
+class MyApplication : Application() {
     var needRefresh = false
-    private val tag = App::class.java.simpleName
+    private val tag = MyApplication::class.java.simpleName
     var isAppToForeground = false
-    val ISDEBUG = false
-    var myContext: Context? = null
-
-    /*
-     * 是否完成  整个项目 Whether the entire project has been completed
-     */
-    var isCompleteProject = false
-    private var instance: App? = null
-
-
-    fun getInstance(): App? {
-        return instance
-    }
-
     override fun onCreate() {
         super.onCreate()
-        context = applicationContext
         instance = this
         myContext = this
         init()
     }
-    companion object {
-        private var context: Context? = null
-        fun getContext(): Context? {
-            return context
-        }
-        const val ISDEBUG = false
-        var myContext: Context? = null
-
-        /*
-     * 是否完成  整个项目 Whether the entire project has been completed
-     */
-        var isCompleteProject = false
-        var instance: MyApplication? = null
-            private set
-    }
-
-
 
     /**
      * 初始化 initialize
@@ -81,5 +51,15 @@ class App : Application() {
      * 退出应用 exitApp
      */
 
+    companion object {
+        const val ISDEBUG = false
+        var myContext: Context? = null
 
+        /*
+     * 是否完成  整个项目 Whether the entire project has been completed
+     */
+        var isCompleteProject = false
+        var instance: MyApplication? = null
+            private set
+    }
 }

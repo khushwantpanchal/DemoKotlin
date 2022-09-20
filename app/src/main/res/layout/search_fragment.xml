@@ -187,7 +187,30 @@
                        app:layout_constraintTop_toBottomOf="@+id/tvTitle"
                        />
                </LinearLayout>
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:id="@+id/alarm_view"
+                    android:layout_width="fill_parent"
+                    android:visibility="gone"
+                    android:layout_height="wrap_content">
 
+                    <!-- Text Label -->
+                    <TextView
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dip"
+                        android:text="Alarm List:"
+                        android:layout_marginBottom="5dp"
+                        />
+
+                    <!-- Spinner Element -->
+                    <Spinner
+                        android:id="@+id/spinner"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:prompt="@string/alaram"
+                        />
+                </LinearLayout>
                 <Button
                     android:id="@+id/newData"
                     android:layout_width="wrap_content"

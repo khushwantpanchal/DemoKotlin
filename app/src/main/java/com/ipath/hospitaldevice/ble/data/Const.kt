@@ -22,6 +22,7 @@ object Const {
     val UUID_SERVICE_DATA_BloodPressure = UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb")
     val UUID_CHARACTER_RECEIVE_BloodPressure = UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb")
 
+    val PillBox="PD_28AD"
     val BP="BP"
     val Glu="OTC-GLU"
     val Thermometer="Thermometer"

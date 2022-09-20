@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/khushwant.panchal/AppData/Local/Android/Sdk/platforms/android-32/data/res/layout/simple_dropdown_item_1line.xml" value="0.2184950135992747" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/drawable/bg_dot_line.xml" value="0.1" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/drawable/btnbglogin.xml" value="0.1505" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/drawable/centre_background.xml" value="0.1" />
@@ -22,6 +23,7 @@
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/patient_details_fragment.xml" value="0.2776268115942029" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/patient_fragment.xml" value="0.36666666666666664" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/report_fragment.xml" value="0.22" />
+        <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/report_selection_fragment.xml" value="0.3009833262077811" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/search_dialog_device_item.xml" value="0.33106884057971014" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/search_fragment.xml" value="0.33" />
         <entry key="..\:/Users/khushwant.panchal/Desktop/Projects/HospitalDevice/app/src/main/res/layout/spinner_item.xml" value="0.11875" />

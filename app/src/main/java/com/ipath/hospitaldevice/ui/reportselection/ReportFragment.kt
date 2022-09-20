@@ -1,53 +1,39 @@
-package com.ipath.hospitaldevice.ui.device
+package com.ipath.hospitaldevice.ui.reportselection
 
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
-import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.databinding.library.baseAdapters.BR
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
-import com.berry_med.spo2_ble.data.Const
-import com.contec.pm10.code.bean.DeviceType
-import com.contec.pm10.code.bean.EcgData
 import com.contec.pm10.code.callback.*
-import com.contec.pm10.code.connect.ContecSdk
-import com.ficat.easyble.BleManager
 import com.ipath.hospitaldevice.R
 import com.ipath.hospitaldevice.base.BaseFragment
-import com.ipath.hospitaldevice.ble.adapter.SearchDevicesDialog
-import com.ipath.hospitaldevice.ble.data.DataParser
-import com.ipath.hospitaldevice.databinding.DeviceFragmentBinding
+
+import com.ipath.hospitaldevice.databinding.ReportSelectionFragmentBinding
 import com.ipath.hospitaldevice.ui.adapter.DeviceListMedicalAdapter
-import com.ipath.hospitaldevice.ui.adapter.DeviceSearchAdapter
 import kotlinx.coroutines.*
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.coroutines.CoroutineContext
 
 
-class DeviceFragment : BaseFragment<DeviceFragmentBinding, DeviceVM>(), DeviceNavigator,
+class ReportFragment : BaseFragment<ReportSelectionFragmentBinding, ReportVM>(), Reportnavigator,
     CoroutineScope{
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var deviceSearchAdapter: DeviceListMedicalAdapter? = null
 
-    private val searchVM: DeviceVM by viewModels()
+    private val searchVM: ReportVM by viewModels()
     lateinit var device_array :Array<String>
 
     var  arg :String?= "";
     var mobile:String? = "";
     var email:String? = "";
-    override fun getViewModel(): DeviceVM {
+    override fun getViewModel(): ReportVM {
         searchVM.setNavigator(this)
         return searchVM
     }
@@ -63,7 +49,7 @@ class DeviceFragment : BaseFragment<DeviceFragmentBinding, DeviceVM>(), DeviceNa
     }
 
     override fun getLayoutId(): Int {
-        return R.layout.device_fragment
+        return R.layout.report_selection_fragment
     }
 
     override fun setupUI() {

@@ -15,14 +15,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.os.Build
-import android.os.Bundle
-import android.os.ParcelUuid
-import android.text.Html
+import android.os.*
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
-import android.widget.ArrayAdapter
+import android.widget.AdapterView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,30 +44,44 @@ import com.ficat.easyble.BleManager
 import com.ficat.easyble.gatt.callback.BleCallback
 import com.ficat.easyble.gatt.callback.BleConnectCallback
 import com.ficat.easyble.gatt.callback.BleNotifyCallback
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.normal.TedPermission
 import com.ipath.hospitaldevice.R
 import com.ipath.hospitaldevice.base.BaseFragment
-import com.ipath.hospitaldevice.ble.BleController
-import com.ipath.hospitaldevice.ble.adapter.DeviceListAdapter
-import com.ipath.hospitaldevice.ble.adapter.SearchDevicesDialog
 import com.ipath.hospitaldevice.ble.data.DataParser
+import com.ipath.hospitaldevice.ble.medicaldevice.bean.DeviceParamsBean
+import com.ipath.hospitaldevice.ble.medicaldevice.bean.TakeDrugBean
+import com.ipath.hospitaldevice.ble.medicaldevice.example.m11x
 import com.ipath.hospitaldevice.databinding.SearchFragmentBinding
+import com.ipath.hospitaldevice.ui.adapter.AlarmBeanAdapter
 import com.ipath.hospitaldevice.ui.adapter.DeviceSearchAdapter
-import com.ipath.hospitaldevice.utils.Utils.SetupHtmlView
 import com.ipath.hospitaldevice.utils.Utils.getManufacturerSpecificData
+import com.zayata.zayatabluetoothsdk.bean.*
+import com.zayata.zayatabluetoothsdk.bluetooth.CmdExplain
+import com.zayata.zayatabluetoothsdk.bluetooth.CmdExplainEN
+import com.zayata.zayatabluetoothsdk.bluetooth.CmdSize
+import com.zayata.zayatabluetoothsdk.callback.*
+import com.zayata.zayatabluetoothsdk.utils.ByteUtil
+import com.zayata.zayatabluetoothsdk.utils.CRC16Util
+import com.zayata.zayatabluetoothsdk.utils.NoticeUtils
 import kotlinx.coroutines.*
+import okhttp3.internal.and
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 
 
 class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientNavigator,
-    CoroutineScope {
+    CoroutineScope, NoticeUtils.INotice {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var deviceSearchAdapter: DeviceSearchAdapter? = null
 
     lateinit var bleManager: BleManager
+     var bleManagerBluetoothManager=com.zayata.zayatabluetoothsdk.bluetooth.BluetoothManager.getInstance()
     var isConnected = false
+    var isConnecting= false
+    var isAlaramSet= false
     private val searchVM: SearchVM by viewModels()
     private var isListen = false
     private val bluetoothAdapter: BluetoothAdapter by lazy {
@@ -90,9 +101,9 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     var mmHgHigh = "";
     var mmHgLow = "";
     var beatBp = "";
-    var color :Int= Color.WHITE;
-    var color2 :Int= Color.WHITE;
-    var color3 :Int= Color.WHITE;
+    var color: Int = Color.WHITE;
+    var color2: Int = Color.WHITE;
+    var color3: Int = Color.WHITE;
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + Job()
@@ -109,7 +120,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     lateinit var activityResultLauncher: ActivityResultLauncher<String>;
     lateinit var requestMultiplePermissions: ActivityResultLauncher<Array<String>>;
     private var isScanning = false
-
+    lateinit var selectedAlarm : AlarmBean
     private val bleScanner by lazy {
         bluetoothAdapter.bluetoothLeScanner
     }
@@ -185,7 +196,29 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             }
         }
         viewDataBinding?.newData?.setOnClickListener {
-            contecSdk!!.getData(communicateCallback)
+            //contecSdk!!.getData(communicateCallback)
+            val picker =
+                MaterialTimePicker.Builder()
+                    .setTimeFormat(TimeFormat.CLOCK_12H)
+                    .setHour(selectedAlarm.hour)
+                    .setMinute(selectedAlarm.minute)
+                    .setTitleText("Select Medical tablet time")
+                    .build()
+            picker.show(this.childFragmentManager, "tag");
+
+            picker.addOnPositiveButtonClickListener(View.OnClickListener {
+
+                selectedAlarm.hour=picker.hour
+                selectedAlarm.minute=picker.minute
+                m11x.setDeviceRemindTime(scanResults[0].device.address,3)
+                m11x.setAlarm(scanResults[0].device.address, selectedAlarm.seq, picker.hour, picker.minute,
+                    object : DevParamCallBack() {
+                        override fun respCb(paramOpRespCbBean: ParamOpRespCbBean) {
+                            isAlaramSet=true
+                        }
+                    })
+            })
+
         }
         viewDataBinding?.btnReport?.setOnClickListener {
             if (isConnected) {
@@ -208,6 +241,8 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 bundle.putInt("color", color)
                 bundle.putInt("color2", color2)
                 bundle.putInt("color3.", color3)
+                bundle.putBoolean("setalarm", isAlaramSet)
+                bundle.putString("alarm", selectedAlarm.hour.toString()+":"+selectedAlarm.minute)
                 findNavController().navigate(R.id.action_patientFragment_to_reportFragment, bundle);
             }
 
@@ -532,15 +567,19 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                     if ((device.toString()
                             .equals(Const.Thermometer) && result.device.name != null && result.device.name.contains(
                             Const.Thermometer
-                        )) ||(device.toString()
+                        )) || (device.toString()
                             .equals(Const.Glucometer) && result.device.name != null && result.device.name.contains(
                             Const.Glu
-                        ))||(device.toString()
+                        )) || (device.toString()
                             .equals(Const.BloodPressure) && result.device.name != null && result.device.name.contains(
                             Const.BP
-                        )) || (!device.toString().equals(Const.Thermometer)&& !device.toString()
-                            .equals(Const.Glucometer)&&!device.toString()
-                            .equals(Const.BloodPressure))
+                        )) || (device.toString()
+                            .equals(Const.MedicinePillBox) && result.device.name != null && result.device.name.contains(
+                            Const.PillBox
+                        )) || (!device.toString().equals(Const.Thermometer) && !device.toString()
+                            .equals(Const.Glucometer) && !device.toString()
+                            .equals(Const.BloodPressure) && !device.toString()
+                            .equals(Const.MedicinePillBox))
                     ) {
 
                         scanResults.add(result)
@@ -550,7 +589,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                     }
                 }
                 if (!isConnected && scanResults.size == 1) {
-                deviceSearchAdapter?.notifyItemChanged(indexQuery)
+                    deviceSearchAdapter?.notifyItemChanged(indexQuery)
                     connect(0)
                 }
             }
@@ -580,6 +619,286 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 isListen = false
                 contecSdk!!.defineBTPrefix(DeviceType.PM10, "EMAY")
                 contecSdk!!.connect(scanResults.get(position).device, mConnectCallback)
+            } else if (device.toString().equals(Const.MedicinePillBox)) {
+                if(!isConnecting) {
+
+                    val mac: String = scanResults.get(position).device.address.replace(":", "")
+                    Log.d("linyb", "mac = $mac")
+                    val macByte = mac.toByteArray()
+                    val CRC16MAC = CRC16Util.getCRC(macByte).toUpperCase()
+                    Log.d("linyb", "MACcrc16 = $CRC16MAC")
+//                com.zayata.zayatabluetoothsdk.bluetooth.BluetoothManager.getInstance().closeAll()
+                    //BluetoothManager.getInstance().connect(CRC16MAC,datas.get(pos).getMac());
+                    //String[] macList = new String[]{datas.get(pos).getMac(),"A6:C0:80:D3:0C:91"};
+
+                    //BluetoothManager.getInstance().connect(CRC16MAC,datas.get(pos).getMac());
+                    //String[] macList = new String[]{datas.get(pos).getMac(),"A6:C0:80:D3:0C:91"};
+                    val openDevConnBean = OpenDevConnBean()
+                    openDevConnBean.dn = scanResults.get(position).device.address
+                    openDevConnBean.bleId = scanResults.get(position).device.address
+                    openDevConnBean.isShowLog = true //debug switch
+                    isConnecting = true //debug switch
+
+
+                    openDevConnBean.succCb = object : ConnSuccCallBack() {
+                        override fun onCallBack(data: ConnSuccCbBean) {
+
+                            val paramValueList = data.confParams
+                            Log.d("linyb", "succCb mac = " + data.mac)
+                            for (i in paramValueList.indices) {
+                                Log.d("linyb", "succCb tag " + i + "=" + paramValueList[i].tag)
+                                Log.d(
+                                    "linyb",
+                                    "succCb value " + i + "=" + ByteUtil.bytesToHexString(
+                                        paramValueList[i].value
+                                    )
+                                )
+                            }
+                            //                    Toast.makeText(context, "connection succeeded", Toast.LENGTH_SHORT)
+//                        .show()
+                            Log.e("\"MYBLE\"", "connection succeeded")
+                            Log.e("MYBLE", "status = Connected")
+                            isConnecting = false
+                            isConnected = true
+                            m11x.getAlarmList(
+                                scanResults[0].device.address,
+                                object : DevParamCallBack() {
+                                    override fun respCb(paramOpRespCbBean: ParamOpRespCbBean) {
+                                        val data = paramOpRespCbBean.params
+                                        val alarmBean1 = AlarmBean(
+                                            1,
+                                            data[2].value[0].toInt(),
+                                            data[0].value[0].toInt(), data[1].value[0].toInt()
+                                        )
+                                        val alarmBean2 = AlarmBean(
+                                            2,
+                                            data[5].value[0].toInt(),
+                                            data[3].value[0].toInt(), data[4].value[0].toInt()
+                                        )
+                                        val alarmBean3 = AlarmBean(
+                                            3,
+                                            data[8].value[0].toInt(),
+                                            data[6].value[0].toInt(), data[7].value[0].toInt()
+                                        )
+                                        val alarmBean4 = AlarmBean(
+                                            4,
+                                            data[11].value[0].toInt(),
+                                            data[9].value[0].toInt(), data[10].value[0].toInt()
+                                        )
+                                        val alarmBean5 = AlarmBean(
+                                            5,
+                                            data[14].value[0].toInt(),
+                                            data[12].value[0].toInt(), data[13].value[0].toInt()
+                                        )
+                                        val alarmBean6 = AlarmBean(
+                                            6,
+                                            data[17].value[0].toInt(),
+                                            data[15].value[0].toInt(), data[16].value[0].toInt()
+                                        )
+                                        val alarmBean7 = AlarmBean(
+                                            7,
+                                            data[20].value[0].toInt(),
+                                            data[18].value[0].toInt(), data[19].value[0].toInt()
+                                        )
+                                        val alarmBean8 = AlarmBean(
+                                            8,
+                                            data[23].value[0].toInt(),
+                                            data[21].value[0].toInt(), data[22].value[0].toInt()
+                                        )
+                                        val alarmBean9 = AlarmBean(
+                                            9,
+                                            data[26].value[0].toInt(),
+                                            data[24].value[0].toInt(), data[25].value[0].toInt()
+                                        )
+                                        m11x.alarmList.add(alarmBean1)
+                                        m11x.alarmList.add(alarmBean2)
+                                        m11x.alarmList.add(alarmBean3)
+                                        m11x.alarmList.add(alarmBean4)
+                                        m11x.alarmList.add(alarmBean5)
+                                        m11x.alarmList.add(alarmBean6)
+                                        m11x.alarmList.add(alarmBean7)
+                                        m11x.alarmList.add(alarmBean8)
+                                        m11x.alarmList.add(alarmBean9)
+                                        for (i in m11x.alarmList.indices) {
+                                            Log.e(
+                                                "linyb",
+                                                "index:" + m11x.alarmList[i].seq + " hour:" + m11x.alarmList[i].time + ", hours:" + m11x.alarmList[i].hour + ", status:" + m11x.alarmList[i].status
+                                            )
+                                        }
+
+                                        val spinAdapter =
+                                            AlarmBeanAdapter(
+                                                activity!!.applicationContext,
+                                                m11x.alarmList
+                                            )
+
+                                        activity?.runOnUiThread {
+                                            viewDataBinding?.spinner?.adapter = spinAdapter
+                                            viewDataBinding?.spinner?.onItemSelectedListener =
+                                                object : AdapterView.OnItemSelectedListener {
+                                                    override fun onItemSelected(
+                                                        parent: AdapterView<*>,
+                                                        view: View,
+                                                        position: Int,
+                                                        id: Long
+                                                    ) {
+                                                        // Get the value selected by the user
+                                                        // e.g. to store it as a field or immediately call a method
+                                                        val user1 = parent.selectedItem as AlarmBean
+                                                        selectedAlarm = user1
+
+                                                    }
+
+                                                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                                                }
+                                            //DO SOMETHING
+                                        }
+                                    }
+                                })
+                            activity!!.runOnUiThread(java.lang.Runnable {
+                                Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
+                                viewDataBinding?.btnRetry?.visibility = View.GONE
+                                viewDataBinding?.btnReport?.visibility = View.VISIBLE
+                                viewDataBinding?.btnSend?.text = "Disconnect"
+                                viewDataBinding?.newData?.text = "Set Alarm"
+                                viewDataBinding?.newData?.visibility = View.VISIBLE
+                                viewDataBinding?.alarmView?.visibility = View.VISIBLE
+                                viewDataBinding?.tvStatus?.visibility = View.GONE
+                                viewDataBinding?.tvTitle?.visibility = View.GONE
+                            })
+                        }
+
+                    }
+                    openDevConnBean.failCb = object : ConnFailCallBack() {
+                        override fun onCallBack(data: ConnFailCbBean) {
+                            Log.d("linyb", "failCb")
+                            activity!!.runOnUiThread(java.lang.Runnable {
+
+                                Toast.makeText(
+                                    context,
+                                    "Device is disconnected",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                                isConnecting = false
+                                viewDataBinding?.btnRetry?.visibility = View.GONE
+                                viewDataBinding?.btnReport?.visibility = View.GONE
+                                viewDataBinding?.tvStatus?.text = ""
+                                viewDataBinding?.tvParams?.text = ""
+                                viewDataBinding?.alarmView?.visibility = View.GONE
+                                viewDataBinding?.btnSend?.setText("Search")
+                                viewDataBinding?.newData?.visibility = View.GONE
+                                viewDataBinding?.tvStatus?.visibility = View.VISIBLE
+                                viewDataBinding?.tvTitle?.visibility = View.VISIBLE
+                            })
+                            Log.e("\"MYBLE\"", "Connection failed")
+                            isConnected = false
+
+
+                        }
+                    }
+                    openDevConnBean.notifyCb = object : NotifyCallBack() {
+                        override fun onCallBack(data: NotifyCbBean) {
+                            Log.d("linyb", "notifyCb")
+                        }
+                    }
+
+                    openDevConnBean.eventCb = object : EventCallBack() {
+                        override fun onCallBack(data: EventCbBean) {
+                            Log.d("linyb", "eventCb")
+                            val eventValueList = data.params
+                            for (i in eventValueList.indices) {
+                                when (eventValueList[i].tag) {
+                                    0xb0.toByte() -> {
+                                        Log.d(
+                                            "linyb",
+                                            "0xb0 size = " + eventValueList[i].len + ", value = " + ByteUtil.bytesToHexString(
+                                                eventValueList[i].value
+                                            )
+                                        )
+                                        val TakeDrugData = eventValueList[i].value
+
+                                        //服药数据 Medication data
+                                        val clock = TakeDrugBean()
+                                        clock.year =
+                                            ByteUtil.bytes2Int(
+                                                byteArrayOf(
+                                                    TakeDrugData[1],
+                                                    TakeDrugData[0]
+                                                )
+                                            ).toString() + ""
+
+                                        clock.month = TakeDrugData[2].toString() + ""
+                                        clock.date = TakeDrugData[3].toString() + ""
+                                        if (TakeDrugData[8] == 0x00.toByte()) {
+                                            clock.status = 2
+                                        } else {
+                                            clock.status = 1
+                                        }
+                                        clock.ahead = TakeDrugData[9] + 1
+                                        clock.alarm_time =
+                                            String.format(
+                                                Locale.getDefault(), "%02d",
+                                                TakeDrugData[6]
+                                            ) + ":" + String.format(
+                                                Locale.getDefault(), "%02d",
+                                                TakeDrugData[7]
+                                            )
+
+                                        clock.drug_time =
+                                            (String.format(
+                                                Locale.getDefault(), "%02d",
+                                                TakeDrugData[4]
+                                            ) + ":" + String.format(
+                                                Locale.getDefault(), "%02d",
+                                                TakeDrugData[5]
+                                            ))
+
+                                        Log.d(
+                                            "linyb",
+                                            ("KEY_EVENT_PARAMS_CHANGE month = " + clock.month.toString() + "KEY_EVENT_PARAMS_CHANGE date = " + clock.date.toString() + "KEY_EVENT_PARAMS_CHANGE getAlarm_time = " + clock.alarm_time.toString() + "KEY_EVENT_PARAMS_CHANGE getDrug_time = " + clock.drug_time)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    openDevConnBean.disconnCb = object : DisconnCallBack() {
+                        override fun onCallBack(data: DisconnCbBean) {
+                            Log.d("linyb", "disconnCb")
+                            activity!!.runOnUiThread(java.lang.Runnable {
+                                isConnecting = false
+                                Toast.makeText(
+                                    context,
+                                    "Device is disconnected",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                                viewDataBinding?.btnRetry?.visibility = View.GONE
+                                viewDataBinding?.btnReport?.visibility = View.GONE
+                                viewDataBinding?.tvStatus?.text = ""
+                                viewDataBinding?.tvParams?.text = ""
+                                viewDataBinding?.btnSend?.setText("Search")
+                                viewDataBinding?.alarmView?.visibility = View.GONE
+                                viewDataBinding?.newData?.visibility = View.GONE
+                                viewDataBinding?.tvStatus?.visibility = View.VISIBLE
+                                viewDataBinding?.tvTitle?.visibility = View.VISIBLE
+                            })
+                            Log.e("\"MYBLE\"", "Connection failed")
+                            isConnected = false
+
+                        }
+                    }
+
+                    bleManagerBluetoothManager.openDevConn(openDevConnBean)
+
+                    // bleManager = BleManager.getInstance().init(context)
+                    // bleManager.connect(
+                    //    scanResults.get(position).device.address,
+                    //    bleConnectCallback
+                    // );
+                }
+
             } else {
                 bleManager = BleManager.getInstance().init(context)
                 bleManager.connect(
@@ -604,11 +923,22 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 if (isConnected) {
                     contecSdk?.disconnect()
                 }
+            } else if (device.toString().equals(Const.MedicinePillBox)) {
+
+                if (isConnected) {
+                    bleManagerBluetoothManager
+                        .closeBle(callbackCloseable)
+                    bleManagerBluetoothManager.closeAll()
+                }else{
+                    bleManagerBluetoothManager
+                        .closeBle(callbackCloseable)
+                    bleManagerBluetoothManager.closeAll()
+                }
             } else {
 
-                    if (bleManager.connectedDevices.size > 0) {
-                        bleManager.disconnectAll()
-                    }
+                if (bleManager.connectedDevices.size > 0) {
+                    bleManager.disconnectAll()
+                }
             }
             viewDataBinding?.tvParams?.setText("")
             viewDataBinding?.tvName?.setText("")
@@ -849,7 +1179,12 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     override fun onDestroy() {
         super.onDestroy()
         mDataParser!!.stop()
-
+        NoticeUtils.getInstance().unRegister(this)
+        if (isScanning) {
+            if (device.equals(Const.MedicinePillBox)) {
+                bleManagerBluetoothManager.stopBleScan()
+            }
+        }
     }
 
     override fun onResume() {
@@ -889,7 +1224,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         Manifest.permission.BLUETOOTH_CONNECT,
                     )
                     .check()
-            }else{
+            } else {
                 BleManager.enableBluetooth(activity, 12530);
             }
         } else {
@@ -922,7 +1257,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         Manifest.permission.ACCESS_FINE_LOCATION,
                     )
                     .check()
-            }else{
+            } else {
                 BleManager.enableBluetooth(activity, 12530);
             }
         }
@@ -982,7 +1317,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                     viewDataBinding?.btnReport?.visibility = View.GONE
                     viewDataBinding?.tvStatus?.text = ""
                     viewDataBinding?.tvParams?.text = ""
-                    viewDataBinding?.btnSend?.setText("Search")
+                    viewDataBinding?.btnSend?.text = "Search"
                 }
             })
         }
@@ -1276,8 +1611,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                             scanResults[indexQuery] = result
                             deviceSearchAdapter?.notifyItemChanged(indexQuery)
                         } else {
-                            if ((device.toString()
-                                    .equals(Const.Thermometer) && result.device.name != null && result.device.name.contains(
+                            if ((device.toString() == Const.Thermometer && result.device.name != null && result.device.name.contains(
                                     Const.Thermometer
                                 )) || !device.toString().equals(Const.Thermometer)
                             ) {
@@ -1314,5 +1648,217 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
             activity!!.runOnUiThread(java.lang.Runnable { Log.e(TAG, "search complete") })
         }
     }
+
+    override fun doNotice(key: Int, data: Any) {
+        val datas: ArrayList<DeviceParamsBean> = ArrayList<DeviceParamsBean>()
+        var mac = data.toString()
+        Log.d("linyb", "mac do notice"+mac)
+        when (key) {
+            NoticeUtils.KEY_M105_BEGIN_CONNECT -> {
+                Log.d("linyb", "KEY_M105_BEGIN_CONNECT")
+                requireActivity().runOnUiThread(java.lang.Runnable {
+//                    adapter.changeData(
+//                        data as String,
+//                        getString(R.string.connecting)
+//                    )
+                })
+            }
+
+
+            NoticeUtils.KEY_M105_CONNECT_SUCCESS -> {
+                Log.d("linyb", "KEY_M105_CONNECT_SUCCESS")
+                var supportConfig =
+                    bleManagerBluetoothManager
+                        .getSupportConfigMultidevice(mac)
+                var supportState =
+                    bleManagerBluetoothManager
+                        .getSupportStateMultidevice(mac)
+                var supportControl =
+                    bleManagerBluetoothManager
+                        .getSupportControlMultidevice(mac)
+                var supportEvent =
+                    bleManagerBluetoothManager
+                        .getSupportEventMultidevice(mac)
+
+                val locale = resources.configuration.locale
+                val language = locale.language
+
+                //CmdExplain中文  CmdExplainEN英文 CmdExplain Chinese CmdExplainEN English
+
+                //CmdExplain中文  CmdExplainEN英文 CmdExplain Chinese CmdExplainEN English
+                for (i in supportConfig.indices) {
+                    val deviceParamsBean = DeviceParamsBean()
+                    deviceParamsBean.type = getString(R.string.configuration_parameter)
+                    deviceParamsBean.tag = supportConfig.get(i)
+                    deviceParamsBean.size = CmdSize.getCmdSize(supportConfig.get(i))
+                    if (language.contains("en")) {
+                        deviceParamsBean.explain = CmdExplainEN.getCmdExplain(supportConfig.get(i))
+                    } else {
+                        deviceParamsBean.explain = CmdExplain.getCmdExplain(supportConfig.get(i))
+                    }
+                    datas.add(deviceParamsBean)
+                }
+                for (i in supportState.indices) {
+                    val deviceParamsBean = DeviceParamsBean()
+                    deviceParamsBean.type = getString(R.string.state_parameter)
+                    deviceParamsBean.tag = supportState.get(i)
+                    deviceParamsBean.size = CmdSize.getCmdSize(supportState.get(i))
+                    if (language.contains("en")) {
+                        deviceParamsBean.explain = CmdExplainEN.getCmdExplain(supportState.get(i))
+                    } else {
+                        deviceParamsBean.explain = CmdExplain.getCmdExplain(supportState.get(i))
+                    }
+                    datas.add(deviceParamsBean)
+                }
+                for (i in supportControl.indices) {
+                    val deviceParamsBean = DeviceParamsBean()
+                    deviceParamsBean.type = getString(R.string.controls_parameter)
+                    deviceParamsBean.tag = supportControl.get(i)
+                    deviceParamsBean.size = CmdSize.getCmdSize(supportControl.get(i))
+                    if (language.contains("en")) {
+                        deviceParamsBean.explain = CmdExplainEN.getCmdExplain(supportControl.get(i))
+                    } else {
+                        deviceParamsBean.explain = CmdExplain.getCmdExplain(supportControl.get(i))
+                    }
+                    datas.add(deviceParamsBean)
+                }
+                for (i in supportEvent.indices) {
+                    val deviceParamsBean = DeviceParamsBean()
+                    deviceParamsBean.type = getString(R.string.event_parameter)
+                    deviceParamsBean.tag = supportEvent.get(i)
+                    deviceParamsBean.size = CmdSize.getCmdSize(supportEvent.get(i))
+                    if (language.contains("en")) {
+                        deviceParamsBean.explain = CmdExplainEN.getCmdExplain(supportEvent.get(i))
+                    } else {
+                        deviceParamsBean.explain = CmdExplain.getCmdExplain(supportEvent.get(i))
+                    }
+                    datas.add(deviceParamsBean)
+                }
+                requireActivity().runOnUiThread(java.lang.Runnable {
+//                    adapter.changeData(
+//                        data as String,
+//                        getString(R.string.connected)
+//                    )
+                })
+                val bundle = Bundle()
+                bundle.putString("mac", data.toString())
+                Log.d("linyb", "KEY_M105_CONNECT_SUCCESS mac=$data")
+//                PageJumpPresenter.junmp(
+//                    this@SelectDeviceActivity,
+//                    DeviceConnectedActivity::class.java, bundle, false
+//                )
+            }
+            NoticeUtils.KEY_M105_CONNECT_FAILURE -> {
+                Log.d("linyb", "KEY_M105_CONNECT_FAILURE")
+                requireActivity().runOnUiThread(java.lang.Runnable {
+//                    adapter.changeData(
+//                        data as String,
+//                        getString(R.string.connection_error)
+//                    )
+                })
+            }
+            NoticeUtils.KEY_M105_DISCONNECT -> {
+                Log.d("linyb", "KEY_M105_DISCONNECT")
+                requireActivity().runOnUiThread(java.lang.Runnable {
+//                    adapter.changeData(
+//                        data as String,
+//                        getString(R.string.not_connected)
+//                    )
+                })
+            }
+        }
+//        requireActivity().runOnUiThread(java.lang.Runnable {
+//            adapter.notifyDataSetChanged() })
+    }
+
+    val mHandler = object : Handler(Looper.getMainLooper()) {
+        override fun handleMessage(msg: Message) {
+            when (msg.what) {
+                1 -> viewDataBinding?.tvParams?.text = msg.obj as String
+                3 -> viewDataBinding?.tvName?.text = msg.obj as String
+                4 -> viewDataBinding?.tvMac?.text = msg.obj as String
+                5 -> viewDataBinding?.tvMacAddress?.text = (msg.obj as StringBuffer)
+            }
+        }
+    }
+
+    private fun getDeviceVersion() {
+        val stateList: MutableList<ParamTlvBean> = ArrayList()
+        val paramTlvBean1 = ParamTlvBean(0x01.toByte(), 0x01.toByte(), byteArrayOf(0x00.toByte()))
+        val paramTlvBean3 = ParamTlvBean(0x03.toByte(), 0x01.toByte(), byteArrayOf(0x00.toByte()))
+        val paramTlvBean4 = ParamTlvBean(0x04.toByte(), 0x01.toByte(), byteArrayOf(0x00.toByte()))
+        stateList.add(paramTlvBean1)
+        stateList.add(paramTlvBean3)
+        stateList.add(paramTlvBean4)
+        val paramOpBean = ParamOpBean()
+        paramOpBean.dn = scanResults.get(0).device.address
+        paramOpBean.opId = 1
+        paramOpBean.params = stateList
+        paramOpBean.devParamCallBack = object : DevParamCallBack() {
+            override fun respCb(paramOpRespCbBean: ParamOpRespCbBean) {
+                Log.d("linyb", "status = " + paramOpRespCbBean.stat)
+                val value = paramOpRespCbBean.params
+                for (i in value.indices) {
+                    when (value[i].tag) {
+                        0x01.toByte() -> {
+                            val message = Message()
+                            message.what = 1
+                            message.obj =
+                                """
+                                ${getString(R.string.device_type)}${if (value[i].value[0] == 0x01.toByte()) "M10X" else "M11X"}
+                                MAC = ${scanResults.get(0).device.address}
+                                """.trimIndent()
+                            mHandler.sendMessage(message)
+                        }
+                        0x03.toByte() -> {
+                            val message3 = Message()
+                            message3.what = 3
+                            message3.obj =
+                                getString(R.string.firmware_version) + (value[i].value[0] and 0xF0 shr 4) + "." + (value[i].value[0] and 0x0F) + ""
+                            mHandler.sendMessage(message3)
+                        }
+                        0x04.toByte() -> {
+                            val message4 = Message()
+                            message4.what = 4
+                            message4.obj =
+                                getString(R.string.registration_type) + if (value[i].value[0] == 0x00.toByte()) getString(
+                                    R.string.unforced_synchronization
+                                ) else getString(R.string.forced_synchronization)
+                            mHandler.sendMessage(message4)
+                        }
+                    }
+                }
+                for (i in value.indices) {
+                    Log.d("linyb","tag = " + value[i].tag + ", size = " + value[i].len + ", value = " + ByteUtil.bytesToHexString(value[i].value))
+                }
+            }
+        }
+        bleManagerBluetoothManager
+            .getDevStat(paramOpBean)
+    }
+
+    var callbackCloseable: CloseBleCallBack = object : CloseBleCallBack() {
+        override fun onCallBack(p0: String?) {
+            activity!!.runOnUiThread(java.lang.Runnable {
+
+                Toast.makeText(context, "Device is disconnected", Toast.LENGTH_SHORT)
+                    .show()
+                viewDataBinding?.btnRetry?.visibility = View.GONE
+                viewDataBinding?.btnReport?.visibility = View.GONE
+                viewDataBinding?.tvStatus?.text = ""
+                viewDataBinding?.tvParams?.text = ""
+                viewDataBinding?.btnSend?.setText("Search")
+                viewDataBinding?.alarmView?.visibility = View.GONE
+                viewDataBinding?.newData?.visibility = View.GONE
+                viewDataBinding?.tvStatus?.visibility = View.VISIBLE
+                viewDataBinding?.tvTitle?.visibility = View.VISIBLE
+                isConnected = false
+            })
+            Log.d("linyb","tag = " + p0 )
+
+        }
+
+    }
+
 
 }
