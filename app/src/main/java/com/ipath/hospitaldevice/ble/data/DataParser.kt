@@ -382,7 +382,7 @@ class DataParser     //Constructor
     }
 
     fun ColorValueGlucometer(temp: Int): Int {
-        if ((temp >= 220 || temp <= 300) ) {
+        if ((temp >= 220 && temp <= 300) ) {
             readingFeedback= "Diabetic"
             return Color.RED
         } else if (temp >=190&& temp <=230 ) {
@@ -401,7 +401,7 @@ class DataParser     //Constructor
         }  else  if ((temp >= 140 ) ) {
             readingFeedback= "HIGH BLOOD PRESSURE(HYPERTENSION) STAGE 2"
             return Color.parseColor("#BD534C")
-        } else if ((temp >= 130 || temp <= 139) ) {
+        } else if ((temp >= 130 && temp <= 139) ) {
             readingFeedback= "HIGH BLOOD PRESSURE(HYPERTENSION) STAGE 1"
             return Color.parseColor("#CC7E0A")
         } else if (temp >=120&& temp <=129 ) {
