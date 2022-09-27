@@ -102,6 +102,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     var mmHgHigh = "";
     var mmHgLow = "";
     var beatBp = "";
+    var feedback = "";
     var color: Int = Color.WHITE;
     var color2: Int = Color.WHITE;
     var color3: Int = Color.WHITE;
@@ -389,6 +390,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         ""
                     )
                 }
+                bundle.putString("feedback", feedback)
                     findNavController().navigate(R.id.action_patientFragment_to_reportFragment, bundle);
             }
 
@@ -416,6 +418,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         color = params?.color!!
                         color2 = params?.color2!!
                         color3 = params?.color3!!
+                        feedback = params?.feedback!!
                         viewDataBinding?.tvStatus?.setText(
                             "SpO2: " + params?.spo2.toString() + " \nPulse Rate: " + params?.pulseRate
                         )
@@ -431,6 +434,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         color = params?.color!!
                         color2 = params?.color2!!
                         color3 = params?.color3!!
+                        feedback = params?.feedback!!
                         viewDataBinding?.tvStatus?.setText(
                             "mg/dL: " + (params?.mmolLvalue).toString() + " \nmmol/L: " + (solution).toString()
                         )
@@ -444,6 +448,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         color = params?.color!!
                         color2 = params?.color2!!
                         color3 = params?.color3!!
+                        feedback = params?.feedback!!
                         val solutionFahrenheit: Double =
                             String.format("%.1f", Fahrenheit.toDouble()).toDouble()
                         Fahrenheit = solutionFahrenheit.toString()
@@ -464,6 +469,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         color = params?.color!!
                         color2 = params?.color2!!
                         color3 = params?.color3!!
+                        feedback = params?.feedback!!
                         val solutionFahrenheit: Double =
                             String.format("%.1f", Fahrenheit.toDouble()).toDouble()
                         Fahrenheit = solutionFahrenheit.toString()
@@ -478,6 +484,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                         color = params?.color!!
                         color2 = params?.color2!!
                         color3 = params?.color3!!
+                        feedback = params?.feedback!!
                         viewDataBinding?.tvStatus?.setText(
                             "Systolic " + (mmHgHigh).toString() + " mmHg" + "  \n" + "Diastolic " + (mmHgLow).toString() + " mmHg \n" + (beatBp).toString() + " BPM"
                         )

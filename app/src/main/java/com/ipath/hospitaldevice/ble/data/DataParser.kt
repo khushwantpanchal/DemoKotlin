@@ -160,7 +160,7 @@ class DataParser     //Constructor
                                     ColorValueTemp(Fahrenheit),
                                     ColorValueTemp(Fahrenheit),
                                     Color.WHITE,
-                                    "",
+                                    readingFeedback,
                                 )
                                 mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                             }

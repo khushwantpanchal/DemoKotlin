@@ -129,6 +129,23 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="@+id/lblResult"
                     app:layout_constraintTop_toBottomOf="@+id/lblResult" />
+ <TextView
+                    android:id="@+id/lblFeedback"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/_10mdp"
+                    android:text="@string/feedback"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/pResult" />
+
+                <TextView
+                    android:id="@+id/pFeedback"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="@+id/lblFeedback"
+                    app:layout_constraintTop_toBottomOf="@+id/lblFeedback" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -136,7 +153,7 @@
                     android:gravity="center_horizontal"
                     android:layout_marginTop="@dimen/_40mdp"
                     android:orientation="vertical"
-                    app:layout_constraintTop_toBottomOf="@+id/pResult"
+                    app:layout_constraintTop_toBottomOf="@+id/pFeedback"
                     tools:layout_editor_absoluteX="20dp">
 
                     <Button

@@ -99,6 +99,7 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
         val color3 = arguments?.getInt("color3")
         val isalarm = arguments?.getBoolean("setalarm",false)
         val alarm = arguments?.getString("alarm")
+        val feedback = arguments?.getString("feedback")
 
 
         viewDataBinding?.pName?.text = arg
@@ -109,7 +110,8 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
 
         val df = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss", Locale.getDefault())
         val formattedDate: String = df.format(c)
-        viewDataBinding?.pDate?.text=formattedDate;
+        viewDataBinding?.pDate?.text=formattedDate
+        viewDataBinding?.pFeedback?.setText(feedback)
         if (!sp02.isNullOrEmpty()) {
             viewDataBinding?.pResult?.setText(
 
@@ -192,8 +194,8 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
         }
 
         viewDataBinding?.btnExit?.setOnClickListener {
-            activity?.finish();
-            exitProcess(0);
+            activity?.finish()
+            exitProcess(0)
         }
 
         viewDataBinding?.btnSendReport?.setOnClickListener {
