@@ -11,6 +11,8 @@
     <color name="colorPrimary">#4F51B5</color>
     <color name="colorPrimaryDark">#0b3146</color>
     <color name="colorAccent">#4F51B5</color>
+    <color name="colorOrange">#CC7E0A</color>
+    <color name="colorRedLight">#BD534C</color>
 
     <color name = "waveform_background">#2E94D8</color>
 </resources>

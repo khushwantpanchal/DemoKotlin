@@ -4,7 +4,7 @@ import androidx.lifecycle.MutableLiveData
 import com.ipath.hospitaldevice.base.BaseViewModel
 import javax.inject.Inject
 
-class ReportVM @Inject constructor() : BaseViewModel<Reportnavigator>(){
+class ReportSelectionVM @Inject constructor() : BaseViewModel<Reportnavigator>(){
     // TODO: Implement the ViewModel
     var lst = MutableLiveData<ArrayList<String>>()
     var newlist = arrayListOf<String>()

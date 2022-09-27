@@ -22,20 +22,20 @@ import java.util.*
 import kotlin.coroutines.CoroutineContext
 
 
-class ReportFragment : BaseFragment<ReportSelectionFragmentBinding, ReportVM>(), Reportnavigator,
+class ReportSelectionFragment : BaseFragment<ReportSelectionFragmentBinding, ReportSelectionVM>(), Reportnavigator,
     CoroutineScope{
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var deviceSearchAdapter: DeviceListMedicalAdapter? = null
 
-    private val searchVM: ReportVM by viewModels()
+    private val searchSelectionVM: ReportSelectionVM by viewModels()
     lateinit var device_array :Array<String>
 
     var  arg :String?= "";
     var mobile:String? = "";
     var email:String? = "";
-    override fun getViewModel(): ReportVM {
-        searchVM.setNavigator(this)
-        return searchVM
+    override fun getViewModel(): ReportSelectionVM {
+        searchSelectionVM.setNavigator(this)
+        return searchSelectionVM
     }
 
     override val coroutineContext: CoroutineContext

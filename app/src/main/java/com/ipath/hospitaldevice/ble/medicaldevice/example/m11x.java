@@ -27,7 +27,7 @@ import java.util.List;
 public class m11x {
     static int opId = 0;
     public m11x(int opId){
-       this.opId=opId;
+        this.opId=opId;
     }
     /*
      * Get device configuration information
@@ -288,7 +288,7 @@ public class m11x {
         }
 
         final int finalI = 1;
-
+        Log.e("opID", "getAlarmList: "+opId );
         ParamOpBean getConfigParam = new ParamOpBean();
         getConfigParam.setDn(mac);
         getConfigParam.setOpId(opId++);
@@ -757,7 +757,7 @@ public class m11x {
 
 
                         break;
-                        case (byte)0x01:
+                    case (byte)0x01:
                         Log.d("linyb","  //M111");
 
 

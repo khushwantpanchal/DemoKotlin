@@ -3,8 +3,8 @@ package com.ipath.hospitaldevice.ble.data
 import android.graphics.Color
 import android.util.Log
 import com.berry_med.spo2_ble.data.Const
+import com.ipath.hospitaldevice.R
 import java.util.*
-import java.util.concurrent.LinkedBlockingQueue
 
 /**
  * Created by ZXX on 2016/1/8.
@@ -24,6 +24,7 @@ class DataParser     //Constructor
     private var isStop = true
     private var DataUpdated = true
     private val mOxiParams = OxiParams()
+    private var readingFeedback =""
 
     /**
      * interface for parameters changed.
@@ -74,6 +75,7 @@ class DataParser     //Constructor
                                 ColorValueSp02(spo2.toInt()),
                                 ColorValuepulseRate(pulseRate.toInt()),
                                 Color.WHITE,
+                                readingFeedback,
                             )
 
                             mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
@@ -103,9 +105,11 @@ class DataParser     //Constructor
                                 "",
                                 "",
                                 "",
+                                ColorValueGlucometer(glucoseMeasurement),
                                 Color.WHITE,
                                 Color.WHITE,
-                                Color.WHITE
+                                readingFeedback,
+
                             )
                             mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         }
@@ -135,9 +139,10 @@ class DataParser     //Constructor
                                     0,
                                     Celcius.toDouble(),
                                     Fahrenheit.toDouble(), "", "", "", "",
-                                    ColorValueTemp(Celcius),
-                                    ColorValueTemp(Celcius),
+                                    ColorValueTemp(Fahrenheit),
+                                    ColorValueTemp(Fahrenheit),
                                     Color.WHITE,
+                                    readingFeedback,
                                 )
                                 mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                             }
@@ -152,9 +157,10 @@ class DataParser     //Constructor
                                     0,
                                     Celcius.toDouble(),
                                     Fahrenheit.toDouble(), "", "", "", "",
-                                    ColorValueTemp(Celcius),
-                                    ColorValueTemp(Celcius),
+                                    ColorValueTemp(Fahrenheit),
+                                    ColorValueTemp(Fahrenheit),
                                     Color.WHITE,
+                                    "",
                                 )
                                 mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                             }
@@ -174,6 +180,7 @@ class DataParser     //Constructor
                             Color.WHITE,
                             Color.WHITE,
                             Color.WHITE,
+                            "",
                         )
                         mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         DataUpdated = false
@@ -191,6 +198,7 @@ class DataParser     //Constructor
                             Color.WHITE,
                             Color.WHITE,
                             Color.WHITE,
+                            "",
                         )
                         mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         DataUpdated = false
@@ -209,9 +217,10 @@ class DataParser     //Constructor
                             dat[3].toString(),
                             dat[4].toString(),
                             dat[5].toString(),
+                            ColorValueBpSystolic( dat[3].toInt()),
+                            ColorValueBpDiastolic( dat[3].toInt()),
                             Color.WHITE,
-                            Color.WHITE,
-                            Color.WHITE,
+                            readingFeedback,
                         )
                         mPackageReceivedListener.onOxiParamsChanged(mOxiParams)
                         DataUpdated = false
@@ -319,6 +328,10 @@ class DataParser     //Constructor
                 = Color.WHITE
             private set
 
+        var feedback: String//perfusion index
+                = ""
+            private set
+
         fun update(
             spo2: Int,
             pulseRate: Int,
@@ -332,7 +345,8 @@ class DataParser     //Constructor
             beat: String,
             color: Int,
             color2: Int,
-            color3: Int
+            color3: Int,
+            feedback: String
         ) {
             this.spo2 = spo2
             this.pulseRate = pulseRate
@@ -347,18 +361,70 @@ class DataParser     //Constructor
             this.color = color
             this.color2 = color2
             this.color3 = color3
+            this.feedback = feedback
         }
     }
 
     fun ColorValueSp02(spo2: Int): Int {
         if (spo2 <= 92 ) {
+            readingFeedback= "Need urgent medical advice - call 999"
             return Color.RED
         } else if ((spo2 == 93 || spo2 == 94) ) {
+            readingFeedback= "Seek advice from your GP"
             return Color.YELLOW
         } else if (spo2 == 95 ) {
+            readingFeedback= "Acceptable to continue home monitoring"
             return Color.GREEN
         } else {
+          readingFeedback= "Normal reading"
             return Color.WHITE
+        }
+    }
+
+    fun ColorValueGlucometer(temp: Int): Int {
+        if ((temp >= 220 || temp <= 300) ) {
+            readingFeedback= "Diabetic"
+            return Color.RED
+        } else if (temp >=190&& temp <=230 ) {
+            readingFeedback= "Impaired Glucose"
+            return Color.YELLOW
+        } else {
+          readingFeedback= "Normal"
+            return Color.GREEN
+        }
+    }
+
+    fun ColorValueBpSystolic(temp: Int): Int {
+        if ((temp >= 140 ) ) {
+            readingFeedback= "HYPERTENSIVE CRISIS (consult your doctor immediately)"
+            return Color.RED
+        }  else  if ((temp >= 140 ) ) {
+            readingFeedback= "HIGH BLOOD PRESSURE(HYPERTENSION) STAGE 2"
+            return Color.parseColor("#BD534C")
+        } else if ((temp >= 130 || temp <= 139) ) {
+            readingFeedback= "HIGH BLOOD PRESSURE(HYPERTENSION) STAGE 1"
+            return Color.parseColor("#CC7E0A")
+        } else if (temp >=120&& temp <=129 ) {
+            readingFeedback= "ELEVATED"
+            return Color.YELLOW
+        } else {
+            readingFeedback= "Normal"
+            return Color.GREEN
+        }
+    }
+    fun ColorValueBpDiastolic(temp: Int): Int {
+        if ((temp >= 120 ) ) {
+            readingFeedback= "HYPERTENSIVE CRISIS (consult your doctor immediately)"
+            return Color.RED
+        }else if ((temp >= 90 ) ) {
+            readingFeedback= "HIGH BLOOD PRESSURE(HYPERTENSION) STAGE 2"
+            return Color.parseColor("#BD534C")
+        } else if (temp >=80&& temp <=89 ) {
+            readingFeedback= "HIGH BLOOD PRESSURE(HYPERTENSION) STAGE 1"
+            return Color.parseColor("#CC7E0A")
+        }  else {
+            readingFeedback= "Normal"
+            return Color.GREEN
         }
     }
 
@@ -375,13 +441,26 @@ class DataParser     //Constructor
     }
 
     fun ColorValueTemp(temp: Double): Int {
-        if (temp >= 39) {
+        if (temp >= 103) {
+            readingFeedback= "High fever CALL YOUR DOCTOR"
             return Color.RED
-        } else if (temp >= 38.1 && temp < 39) {
+        } else if (temp >= 100.4 && temp < 103) {
+            readingFeedback= "Fever"
             return Color.YELLOW
-        } else if (temp < 38.1 && temp > 37.5) {
+        } else if (temp >= 98.6 && temp < 100.4) {
+            readingFeedback= "Normal or low grade fever"
             return Color.GREEN
+        }else if (temp >= 97 && temp < 98.6) {
+            readingFeedback= "Normal"
+            return Color.WHITE
+        }else if (temp >= 95.1 && temp <= 96.9) {
+            readingFeedback= "Low but possible normal"
+            return Color.GREEN
+        }else if (temp <= 95) {
+            readingFeedback= "Hypothermia SEEK CARE"
+            return Color.YELLOW
         } else {
+            readingFeedback= ""
             return Color.WHITE
         }
     }

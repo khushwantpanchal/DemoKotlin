@@ -113,30 +113,30 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
         if (!sp02.isNullOrEmpty()) {
             viewDataBinding?.pResult?.setText(
 
-                    SetupHtmlView(
-                        SetupView(
-                            "SpO2: " + sp02.toString(),
-                            Integer.toHexString(color!!)
-                        ) + "  <br>" + SetupView("Pulse Rate: " + beat, Integer.toHexString(color2!!))
-                    )
+                SetupHtmlView(
+                    SetupView(
+                        "SpO2: " + sp02.toString(),
+                        Integer.toHexString(color!!)
+                    ) + "  <br>" + SetupView("Pulse Rate: " + beat, Integer.toHexString(color2!!))
+                )
             )
         } else if (!GluecosedL.isNullOrEmpty()) {
             viewDataBinding?.pResult?.setText(
 
-                    SetupHtmlView(
-                        SetupView(
-                            "mg/dL: " + (GluecosedL).toString(),
-                            Integer.toHexString(color!!)
-                        ) + "  <br>" + SetupView(
-                            "mmol/L: " + (GluecosedLmmolLvalue).toString(),
-                            Integer.toHexString(color2!!)
-                        )
+                SetupHtmlView(
+                    SetupView(
+                        "mg/dL: " + (GluecosedL).toString(),
+                        Integer.toHexString(color!!)
+                    ) + "  <br>" + SetupView(
+                        "mmol/L: " + (GluecosedLmmolLvalue).toString(),
+                        Integer.toHexString(color2!!)
                     )
+                )
 
 
             )
 
-        } else if (!Celcius.isNullOrEmpty()) {
+        }else if (!Celcius.isNullOrEmpty()) {
             viewDataBinding?.pResult?.setText(
                 SetupHtmlView(
                     SetupView(
@@ -169,7 +169,7 @@ class ReportFragment : BaseFragment<ReportFragmentBinding, ReportVM>(), ReportNa
             viewDataBinding?.pResult?.setText(
                 SetupHtmlView(
                     SetupView(
-                        "Alarm Time: "+alarm ,
+                        "Alarm : "+alarm ,
                         Integer.toHexString(color!!)
                     )
                 )

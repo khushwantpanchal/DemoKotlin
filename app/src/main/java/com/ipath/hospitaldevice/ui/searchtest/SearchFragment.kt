@@ -68,6 +68,7 @@ import com.zayata.zayatabluetoothsdk.utils.CRC16Util
 import com.zayata.zayatabluetoothsdk.utils.NoticeUtils
 import kotlinx.coroutines.*
 import okhttp3.internal.and
+import okhttp3.internal.notify
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 
@@ -78,7 +79,7 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
     private var deviceSearchAdapter: DeviceSearchAdapter? = null
 
     lateinit var bleManager: BleManager
-     var bleManagerBluetoothManager=com.zayata.zayatabluetoothsdk.bluetooth.BluetoothManager.getInstance()
+    var bleManagerBluetoothManager=com.zayata.zayatabluetoothsdk.bluetooth.BluetoothManager.getInstance()
     var isConnected = false
     var isConnecting= false
     var isAlaramSet= false
@@ -210,11 +211,146 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
 
                 selectedAlarm.hour=picker.hour
                 selectedAlarm.minute=picker.minute
-                m11x.setDeviceRemindTime(scanResults[0].device.address,3)
+//                m11x.setDeviceRemindTime(scanResults[0].device.address,3)
+                var position=viewDataBinding?.spinner?.selectedItemPosition!!
                 m11x.setAlarm(scanResults[0].device.address, selectedAlarm.seq, picker.hour, picker.minute,
                     object : DevParamCallBack() {
                         override fun respCb(paramOpRespCbBean: ParamOpRespCbBean) {
                             isAlaramSet=true
+
+                            m11x.alarmList.get(position).hour=selectedAlarm.hour
+                            m11x.alarmList.get(position).minute= selectedAlarm.minute
+                            val spinAdapter =
+                                AlarmBeanAdapter(
+                                    activity!!.applicationContext,
+                                    m11x.alarmList
+                                )
+
+                            activity?.runOnUiThread {
+                                viewDataBinding?.spinner?.adapter = spinAdapter
+                                Toast.makeText(context, "Alarm Set Successfully", Toast.LENGTH_SHORT).show()
+                                viewDataBinding!!.spinner.setSelection(position)
+                                viewDataBinding?.spinner?.onItemSelectedListener =
+                                    object : AdapterView.OnItemSelectedListener {
+                                        override fun onItemSelected(
+                                            parent: AdapterView<*>,
+                                            view: View,
+                                            position: Int,
+                                            id: Long
+                                        ) {
+                                            // Get the value selected by the user
+                                            // e.g. to store it as a field or immediately call a method
+                                            val user1 = parent.selectedItem as AlarmBean
+                                            selectedAlarm = user1
+
+                                        }
+
+                                        override fun onNothingSelected(parent: AdapterView<*>?) {}
+                                    }
+
+
+                                //DO SOMETHING
+                            }
+//                            m11x.getAlarmList(
+//                                scanResults[0].device.address,
+//                                object : DevParamCallBack() {
+//                                    override fun respCb(paramOpRespCbBean: ParamOpRespCbBean) {
+//                                        val data = paramOpRespCbBean.params
+//                                        val alarmBean1 = AlarmBean(
+//                                            1,
+//                                            data[2].value[0].toInt(),
+//                                            data[0].value[0].toInt(), data[1].value[0].toInt()
+//                                        )
+//                                        val alarmBean2 = AlarmBean(
+//                                            2,
+//                                            data[5].value[0].toInt(),
+//                                            data[3].value[0].toInt(), data[4].value[0].toInt()
+//                                        )
+//                                        val alarmBean3 = AlarmBean(
+//                                            3,
+//                                            data[8].value[0].toInt(),
+//                                            data[6].value[0].toInt(), data[7].value[0].toInt()
+//                                        )
+//                                        val alarmBean4 = AlarmBean(
+//                                            4,
+//                                            data[11].value[0].toInt(),
+//                                            data[9].value[0].toInt(), data[10].value[0].toInt()
+//                                        )
+//                                        val alarmBean5 = AlarmBean(
+//                                            5,
+//                                            data[14].value[0].toInt(),
+//                                            data[12].value[0].toInt(), data[13].value[0].toInt()
+//                                        )
+//                                        val alarmBean6 = AlarmBean(
+//                                            6,
+//                                            data[17].value[0].toInt(),
+//                                            data[15].value[0].toInt(), data[16].value[0].toInt()
+//                                        )
+//                                        val alarmBean7 = AlarmBean(
+//                                            7,
+//                                            data[20].value[0].toInt(),
+//                                            data[18].value[0].toInt(), data[19].value[0].toInt()
+//                                        )
+//                                        val alarmBean8 = AlarmBean(
+//                                            8,
+//                                            data[23].value[0].toInt(),
+//                                            data[21].value[0].toInt(), data[22].value[0].toInt()
+//                                        )
+//                                        val alarmBean9 = AlarmBean(
+//                                            9,
+//                                            data[26].value[0].toInt(),
+//                                            data[24].value[0].toInt(), data[25].value[0].toInt()
+//                                        )
+//                                        m11x.alarmList.add(alarmBean1)
+//                                        m11x.alarmList.add(alarmBean2)
+//                                        m11x.alarmList.add(alarmBean3)
+//                                        m11x.alarmList.add(alarmBean4)
+//                                        m11x.alarmList.add(alarmBean5)
+//                                        m11x.alarmList.add(alarmBean6)
+//                                        m11x.alarmList.add(alarmBean7)
+//                                        m11x.alarmList.add(alarmBean8)
+//                                        m11x.alarmList.add(alarmBean9)
+//                                        for (i in m11x.alarmList.indices) {
+//                                            Log.e(
+//                                                "linyb",
+//                                                "index:" + m11x.alarmList[i].seq + " hour:" + m11x.alarmList[i].time + ", hours:" + m11x.alarmList[i].hour + ", status:" + m11x.alarmList[i].status
+//                                            )
+//                                        }
+//
+//                                        val spinAdapter =
+//                                            AlarmBeanAdapter(
+//                                                activity!!.applicationContext,
+//                                                m11x.alarmList
+//                                            )
+//
+//                                        activity?.runOnUiThread {
+//                                            viewDataBinding?.spinner?.adapter = spinAdapter
+//                                            Toast.makeText(context, "Alarm Set Successfully", Toast.LENGTH_SHORT).show()
+//                                            viewDataBinding!!.spinner.setSelection(position)
+//                                            viewDataBinding?.spinner?.onItemSelectedListener =
+//                                                object : AdapterView.OnItemSelectedListener {
+//                                                    override fun onItemSelected(
+//                                                        parent: AdapterView<*>,
+//                                                        view: View,
+//                                                        position: Int,
+//                                                        id: Long
+//                                                    ) {
+//                                                        // Get the value selected by the user
+//                                                        // e.g. to store it as a field or immediately call a method
+//                                                        val user1 = parent.selectedItem as AlarmBean
+//                                                        selectedAlarm = user1
+//
+//                                                    }
+//
+//                                                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+//                                                }
+//
+//
+//                                            //DO SOMETHING
+//                                        }
+//                                    }
+//                                })
+
                         }
                     })
             })
@@ -242,8 +378,18 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
                 bundle.putInt("color2", color2)
                 bundle.putInt("color3.", color3)
                 bundle.putBoolean("setalarm", isAlaramSet)
-                bundle.putString("alarm", selectedAlarm.hour.toString()+":"+selectedAlarm.minute)
-                findNavController().navigate(R.id.action_patientFragment_to_reportFragment, bundle);
+                if( device.toString().equals(Const.MedicinePillBox) ) {
+                    bundle.putString(
+                        "alarm",
+                        selectedAlarm.seq.toString() + " - Time - " + selectedAlarm.hour.toString() + ":" + selectedAlarm.minute + " - Status - " + selectedAlarm.seq.toString()
+                    )
+                }else{
+                    bundle.putString(
+                        "alarm",
+                        ""
+                    )
+                }
+                    findNavController().navigate(R.id.action_patientFragment_to_reportFragment, bundle);
             }
 
         }
@@ -1182,7 +1328,15 @@ class SearchFragment : BaseFragment<SearchFragmentBinding, SearchVM>(), PatientN
         NoticeUtils.getInstance().unRegister(this)
         if (isScanning) {
             if (device.equals(Const.MedicinePillBox)) {
-                bleManagerBluetoothManager.stopBleScan()
+                try {
+                    try {
+                        bleManagerBluetoothManager.stopBleScan()
+                    }catch (e:Exception){
+                        e.printStackTrace()
+                    }
+                }catch (e:Exception){
+                    e.printStackTrace()
+                }
             }
         }
     }

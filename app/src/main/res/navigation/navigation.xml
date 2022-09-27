@@ -13,10 +13,10 @@
             app:exitAnim="@anim/anim_slide_out_left"
             app:popEnterAnim="@anim/anim_slide_in_left"
             app:popExitAnim="@anim/anim_slide_out_right">
-        <argument
-            android:name="pname"
-            app:argType="string"
-            />
+            <argument
+                android:name="pname"
+                app:argType="string"
+                />
             <argument
                 android:name="mobile"
                 app:argType="string" />
@@ -86,7 +86,7 @@
     </fragment>
 
     <fragment android:id="@+id/deviceListFragment"
-        android:name="com.ipath.hospitaldevice.ui.reportselection.ReportFragment"
+        android:name="com.ipath.hospitaldevice.ui.reportselection.ReportSelectionFragment"
         android:label="fragment_my_second"
         tools:layout="@layout/report_selection_fragment">
         <action android:id="@+id/action_device_to_patientFragment"
